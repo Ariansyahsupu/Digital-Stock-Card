@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Digital Stock Card | Distribution Center</title>
+    <!-- Import Library QR Scanner -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
         :root {
             /* Corporate Palette */
@@ -198,6 +200,12 @@
         .form-select { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid var(--border); border-radius: 6px; background-color: white; font-size: 1rem; cursor: pointer; }
         .btn-primary { width: 100%; padding: 12px; background-color: var(--primary); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
         .btn-primary:disabled { background-color: #9ca3af; cursor: not-allowed; }
+        
+        .btn-scan { 
+            width: 100%; padding: 12px; background-color: var(--secondary); margin-bottom: 10px;
+            color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-scan:hover { background-color: #374151; }
 
         /* Badges */
         .status-badge { padding: 4px 10px; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; display: inline-block; }
@@ -215,6 +223,9 @@
         .btn-cancel { background: #e5e7eb; color: #374151; flex: 1; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: 600; }
         .btn-confirm { background: var(--primary); color: white; flex: 1; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: 600; }
         .btn-confirm:disabled { background: #9ca3af; }
+
+        /* Scanner Specific */
+        #reader { width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 10px; }
 
         .hidden { display: none !important; }
         .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; margin: 0 auto; }
@@ -244,12 +255,24 @@
         <div id="homeState" class="card hidden">
             <div style="padding: 40px 20px; text-align: center;">
                 <h3 style="margin-bottom: 8px; color: var(--secondary);">Langkah 1: Pilih Lokasi</h3>
-                <p style="margin-bottom: 24px; color: var(--text-muted); font-size: 0.9rem;">Scan QR atau Pilih Storage Bin</p>
+                <p style="margin-bottom: 24px; color: var(--text-muted); font-size: 0.9rem;">Scan QR di Rak atau Pilih Manual</p>
                 <div style="max-width: 300px; margin: 0 auto;">
+                    
+                    <!-- NEW: Tombol Scan QR -->
+                    <button id="btnStartScan" class="btn-scan">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+                        Buka Kamera (Scan QR)
+                    </button>
+
+                    <div style="margin: 15px 0; color: #9ca3af; font-size: 0.8rem; display: flex; align-items: center; gap: 10px;">
+                        <span style="flex:1; height:1px; background:#e5e7eb;"></span> ATAU <span style="flex:1; height:1px; background:#e5e7eb;"></span>
+                    </div>
+
                     <select id="manualBinInput" class="form-select">
                         <option value="" disabled selected>Loading BIN list...</option>
                     </select>
-                    <button id="btnSelectBin" class="btn-primary">Lanjut</button>
+                    <button id="btnSelectBin" class="btn-primary">Lanjut (Manual)</button>
+                    
                     <div style="margin-top: 15px;">
                        <button id="btnRefreshBins" style="background:none; border:none; color:var(--primary); font-size:0.8rem; cursor:pointer; text-decoration:underline;">Refresh BIN List</button>
                     </div>
@@ -366,7 +389,16 @@
 
     </div>
 
-    <!-- MODAL POPUP -->
+    <!-- MODAL POPUP - SCANNER -->
+    <div id="scannerModal" class="modal-overlay">
+        <div class="modal" style="text-align: center;">
+            <h3 class="modal-title">Scan QR Bin</h3>
+            <div id="reader" style="width:100%"></div>
+            <button id="btnCloseScanner" class="btn-cancel" style="width:100%; margin-top:10px;">Tutup Kamera</button>
+        </div>
+    </div>
+
+    <!-- MODAL POPUP - TRANSAKSI -->
     <div id="trxModal" class="modal-overlay">
         <div class="modal">
             <h3 id="modalTitle" class="modal-title">Input Transaksi</h3>
@@ -407,29 +439,89 @@
         let selectedItem = null;
         let currentBinCode = null;
         let currentTrxType = "OUT"; 
+        let html5QrcodeScanner = null;
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('year').textContent = new Date().getFullYear();
             
-            document.getElementById('btnSelectBin').addEventListener('click', handleBinSelection);
+            // Event Listeners
+            document.getElementById('btnSelectBin').addEventListener('click', () => {
+                const val = document.getElementById('manualBinInput').value;
+                if(val) proceedToBin(val);
+                else alert("Pilih BIN terlebih dahulu");
+            });
             document.getElementById('btnRefreshBins').addEventListener('click', fetchBinList);
             document.getElementById('btnOpenCard').addEventListener('click', handleMaterialSelection);
             
+            // Scanner Events
+            document.getElementById('btnStartScan').addEventListener('click', startScanner);
+            document.getElementById('btnCloseScanner').addEventListener('click', stopScanner);
+
+            // Transaction Events
             document.getElementById('btnCancelTrx').addEventListener('click', closeModal);
             document.getElementById('btnConfirmTrx').addEventListener('click', submitTransaction);
             
+            // Init
             const urlParams = new URLSearchParams(window.location.search);
             const binCode = urlParams.get('bin');
             if (binCode) {
-                currentBinCode = binCode;
-                loadBinItems(binCode);
+                proceedToBin(binCode);
             } else {
                 showHomeState();
                 fetchBinList();
             }
         });
 
-        // --- FETCH BIN LIST ---
+        // --- SCANNER LOGIC ---
+        function startScanner() {
+            document.getElementById('scannerModal').style.display = 'flex';
+            
+            if (!html5QrcodeScanner) {
+                html5QrcodeScanner = new Html5QrcodeScanner(
+                    "reader", { fps: 10, qrbox: 250 }
+                );
+            }
+            
+            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+        }
+
+        function stopScanner() {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.clear().then(() => {
+                    document.getElementById('scannerModal').style.display = 'none';
+                }).catch(error => {
+                    console.error("Failed to clear html5QrcodeScanner. ", error);
+                    document.getElementById('scannerModal').style.display = 'none';
+                });
+            } else {
+                document.getElementById('scannerModal').style.display = 'none';
+            }
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            // Stop scanning
+            stopScanner();
+            // Proceed with the scanned code
+            alert("QR Terdeteksi: " + decodedText);
+            proceedToBin(decodedText);
+        }
+
+        function onScanFailure(error) {
+            // console.warn(`Code scan error = ${error}`);
+        }
+
+        // --- MAIN LOGIC ---
+        function proceedToBin(binCode) {
+            // Update URL for refreshing
+            try {
+                const newUrl = `${window.location.pathname}?bin=${encodeURIComponent(binCode)}`;
+                window.history.pushState({path:newUrl},'',newUrl);
+            } catch(e){}
+            
+            currentBinCode = binCode;
+            loadBinItems(binCode);
+        }
+
         async function fetchBinList() {
             const selectEl = document.getElementById('manualBinInput');
             selectEl.innerHTML = '<option value="" disabled selected>Loading...</option>';
@@ -454,23 +546,8 @@
             }
         }
 
-        // --- LOAD ITEMS ---
-        function handleBinSelection() {
-            const val = document.getElementById('manualBinInput').value;
-            if (val) {
-                try {
-                    const newUrl = `${window.location.pathname}?bin=${encodeURIComponent(val)}`;
-                    window.history.pushState({path:newUrl},'',newUrl);
-                } catch(e){}
-                currentBinCode = val;
-                loadBinItems(val);
-            } else {
-                alert("Silakan pilih BIN terlebih dahulu.");
-            }
-        }
-
         async function loadBinItems(binCode) {
-            showLoading(true, "Mengambil Data Material...");
+            showLoading(true, "Mencari Data BIN: " + binCode);
             updateHeader(binCode);
 
             try {
@@ -478,7 +555,7 @@
                 const data = await response.json();
                 
                 if (!data || data.length === 0) {
-                    alert(`Tidak ada material ditemukan di BIN: ${binCode}.`);
+                    alert(`Data tidak ditemukan untuk BIN: ${binCode}.\nPastikan QR Code sesuai dengan data di Spreadsheet.`);
                     showHomeState();
                 } else {
                     binItemsCache = data;
@@ -504,7 +581,6 @@
             selectEl.innerHTML = optionsHTML;
         }
 
-        // --- SHOW SINGLE CARD & HISTORY ---
         function handleMaterialSelection() {
             const index = document.getElementById('materialInput').value;
             if (index === "") {
@@ -514,10 +590,10 @@
             
             selectedItem = binItemsCache[index];
             renderSingleCard(selectedItem);
-            // Panggil fungsi untuk mengambil history
             loadHistory(currentBinCode, selectedItem.material);
         }
 
+        // --- RENDER & HISTORY ---
         async function loadHistory(bin, material) {
             const tbody = document.getElementById('historyTableBody');
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Memuat riwayat...</td></tr>';
@@ -542,12 +618,10 @@
                         typeBadge = '<span class="status-badge badge-minus" style="font-size:0.7rem;">OUT</span>';
                     }
                     
-                    // Format Date sederhana
                     let dateDisplay = row.date;
                     try {
                         const d = new Date(row.date);
                         if (!isNaN(d)) {
-                            // dd/MM HH:mm
                             dateDisplay = d.getDate().toString().padStart(2,'0') + '/' + 
                                           (d.getMonth()+1).toString().padStart(2,'0') + ' ' + 
                                           d.getHours().toString().padStart(2,'0') + ':' + 
@@ -667,20 +741,13 @@
                 if (result.status === 'success') {
                     alert("Berhasil! Transaksi tercatat.");
                     closeModal();
-                    
-                    // Reload data untuk bin ini
                     await loadBinItems(currentBinCode);
-                    
-                    // Refresh tampilan card
                     const updatedItem = binItemsCache.find(i => i.material === selectedItem.material);
                     if (updatedItem) {
                         selectedItem = updatedItem;
                         renderSingleCard(selectedItem);
                     }
-                    
-                    // Refresh History
                     loadHistory(currentBinCode, selectedItem.material);
-
                 } else {
                     throw new Error(result.message || "Gagal menyimpan.");
                 }
@@ -693,7 +760,7 @@
             }
         }
 
-        // --- UTILS & NAVIGATION ---
+        // --- UTILS ---
         function updateHeader(bin) {
             document.getElementById('headerBinDisplay').textContent = bin ? `BIN : ${bin.toUpperCase()}` : 'SCAN QR';
         }
