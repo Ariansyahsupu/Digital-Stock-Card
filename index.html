@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Stock Card | Distribution Center</title>
+    <style>
+        :root {
+            /* Corporate Palette */
+            --primary: #064e3b;       /* Dark Emerald */
+            --primary-light: #10b981; /* Emerald */
+            --secondary: #1f2937;     /* Charcoal */
+            --bg-body: #f3f4f6;       /* Light Grey */
+            --bg-card: #ffffff;
+            --border: #e5e7eb;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            
+            /* Status Colors */
+            --status-ok-bg: #d1fae5;
+            --status-ok-text: #065f46;
+            --status-plus-bg: #ffedd5;
+            --status-plus-text: #9a3412;
+            --status-minus-bg: #fee2e2;
+            --status-minus-text: #991b1b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding-bottom: 60px;
+        }
+
+        /* --- LAYOUT --- */
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .header-content {
+            max-width: 600px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .bin-indicator {
+            background-color: rgba(255,255,255,0.15);
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: 500;
+            font-family: monospace;
+        }
+
+        .container { max-width: 600px; margin: 0 auto; padding: 16px; }
+        
+        .card {
+            background: var(--bg-card);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .card-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            background-color: #f9fafb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-title { font-weight: 600; color: var(--secondary); font-size: 1rem;}
+
+        /* --- SINGLE ITEM CARD DESIGN --- */
+        .item-hero {
+            padding: 20px;
+            background-color: white;
+            border-bottom: 1px solid var(--border);
+            text-align: center;
+        }
+        .hero-code {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 5px;
+            display: block;
+        }
+        .hero-desc {
+            font-size: 1rem;
+            color: var(--text-main);
+            margin-bottom: 5px;
+            line-height: 1.4;
+        }
+        .hero-meta {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            background: #f3f4f6;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        /* Grid Stats for Single Item */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1px;
+            background-color: var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+        .stat-cell {
+            background-color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            display: block;
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--secondary);
+        }
+        .stat-value.phys { color: var(--primary); }
+        .stat-sub { font-size: 0.75rem; color: #9ca3af; }
+
+        /* Detail List */
+        .detail-list {
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 0.9rem;
+        }
+        .detail-item:last-child { border-bottom: none; }
+        .detail-key { color: var(--text-muted); }
+        .detail-val { font-weight: 500; color: var(--secondary); text-align: right; }
+
+        /* Actions */
+        .action-bar {
+            padding: 16px;
+            background-color: #f9fafb;
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid var(--border);
+        }
+        .btn-action {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-in { background-color: var(--primary); color: white; }
+        .btn-in:hover { background-color: var(--primary-light); }
+        .btn-out { background-color: var(--secondary); color: white; }
+        .btn-out:hover { background-color: #374151; }
+
+        /* Table & History */
+        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .stock-table { width: 100%; border-collapse: collapse; min-width: 100%; }
+        .stock-table th {
+            text-align: left; padding: 10px; background-color: #f9fafb;
+            color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;
+            border-bottom: 2px solid var(--border); white-space: nowrap;
+        }
+        .stock-table td {
+            padding: 10px; border-bottom: 1px solid #f3f4f6;
+            vertical-align: middle; font-size: 0.85rem; color: var(--text-main);
+        }
+
+        /* Buttons & Inputs */
+        .btn-back { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 5px; }
+        .btn-back:hover { color: var(--secondary); text-decoration: underline; }
+        .form-select { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid var(--border); border-radius: 6px; background-color: white; font-size: 1rem; cursor: pointer; }
+        .btn-primary { width: 100%; padding: 12px; background-color: var(--primary); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .btn-primary:disabled { background-color: #9ca3af; cursor: not-allowed; }
+
+        /* Badges */
+        .status-badge { padding: 4px 10px; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; display: inline-block; }
+        .badge-ok { background-color: var(--status-ok-bg); color: var(--status-ok-text); }
+        .badge-plus { background-color: var(--status-plus-bg); color: var(--status-plus-text); }
+        .badge-minus { background-color: var(--status-minus-bg); color: var(--status-minus-text); }
+
+        /* --- MODAL --- */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: none; justify-content: center; align-items: center; }
+        .modal { background: white; width: 90%; max-width: 400px; border-radius: 8px; padding: 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .modal-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 15px; color: var(--secondary); }
+        .modal-label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px; }
+        .modal-input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border); border-radius: 4px; font-size: 1.1rem; }
+        .modal-actions { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-cancel { background: #e5e7eb; color: #374151; flex: 1; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: 600; }
+        .btn-confirm { background: var(--primary); color: white; flex: 1; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: 600; }
+        .btn-confirm:disabled { background: #9ca3af; }
+
+        .hidden { display: none !important; }
+        .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        footer { text-align: center; padding: 24px; color: var(--text-muted); font-size: 0.75rem; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-content">
+            <div class="brand"><h1>Digital Stock Card</h1></div>
+            <div class="bin-indicator" id="headerBinDisplay">SCAN QR</div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Loading -->
+        <div id="loadingState" class="card hidden">
+            <div style="padding: 24px; text-align: center;">
+                <div class="loading-spinner"></div>
+                <p style="margin-top: 10px; font-size: 0.9rem;" id="loadingText">Connecting...</p>
+            </div>
+        </div>
+
+        <!-- 1. SELECT BIN (HOME) -->
+        <div id="homeState" class="card hidden">
+            <div style="padding: 40px 20px; text-align: center;">
+                <h3 style="margin-bottom: 8px; color: var(--secondary);">Langkah 1: Pilih Lokasi</h3>
+                <p style="margin-bottom: 24px; color: var(--text-muted); font-size: 0.9rem;">Scan QR atau Pilih Storage Bin</p>
+                <div style="max-width: 300px; margin: 0 auto;">
+                    <select id="manualBinInput" class="form-select">
+                        <option value="" disabled selected>Loading BIN list...</option>
+                    </select>
+                    <button id="btnSelectBin" class="btn-primary">Lanjut</button>
+                    <div style="margin-top: 15px;">
+                       <button id="btnRefreshBins" style="background:none; border:none; color:var(--primary); font-size:0.8rem; cursor:pointer; text-decoration:underline;">Refresh BIN List</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. SELECT MATERIAL -->
+        <div id="materialSelectState" class="card hidden">
+            <div class="card-header">
+                <button class="btn-back" onclick="showHomeState()">← Ganti Bin</button>
+                <span class="card-title">Langkah 2: Pilih Material</span>
+            </div>
+            <div style="padding: 30px 20px; text-align: center;">
+                <p style="margin-bottom: 16px; color: var(--text-muted); font-size: 0.9rem;">
+                    Ditemukan <strong id="materialCount" style="color:var(--text-main)">0</strong> material di Bin ini.
+                </p>
+                <div style="max-width: 350px; margin: 0 auto;">
+                    <select id="materialInput" class="form-select">
+                        <option value="" disabled selected>-- Pilih Material --</option>
+                    </select>
+                    <button id="btnOpenCard" class="btn-primary">Buka Kartu Stok</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. SINGLE CARD VIEW -->
+        <div id="singleCardState" class="hidden">
+            <!-- Main Info Card -->
+            <div class="card">
+                <div class="card-header">
+                    <button class="btn-back" onclick="showMaterialSelectState()">← Kembali</button>
+                    <span id="lastUpdated" style="font-size: 0.75rem; color: var(--text-muted);">Updated: --</span>
+                </div>
+                
+                <div class="item-hero">
+                    <div id="cardStatusBadge" style="margin-bottom:10px;"></div>
+                    <span class="hero-code" id="cardMaterial">MAT-0000</span>
+                    <div class="hero-desc" id="cardDesc">Description Here</div>
+                    <div class="hero-meta">
+                        MPN: <span id="cardMpn">-</span> | Bin: <span id="cardBin">-</span>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-cell">
+                        <span class="stat-label">System (SOH)</span>
+                        <span class="stat-value" id="cardSoh">0</span>
+                        <span class="stat-sub" id="cardUom1">PCS</span>
+                    </div>
+                    <div class="stat-cell">
+                        <span class="stat-label">Physical (Aktual)</span>
+                        <span class="stat-value phys" id="cardPhysical">0</span>
+                        <span class="stat-sub" id="cardUom2">PCS</span>
+                    </div>
+                </div>
+
+                <ul class="detail-list">
+                    <li class="detail-item">
+                        <span class="detail-key">Ref No GR (Masuk)</span>
+                        <span class="detail-val" id="cardNoGr">-</span>
+                    </li>
+                    <li class="detail-item">
+                        <span class="detail-key">Ref No GI (Keluar)</span>
+                        <span class="detail-val" id="cardNoGi">-</span>
+                    </li>
+                    <li class="detail-item">
+                        <span class="detail-key">Total Masuk (In)</span>
+                        <span class="detail-val" id="cardQtyIn">0</span>
+                    </li>
+                    <li class="detail-item">
+                        <span class="detail-key">Total Keluar (Out)</span>
+                        <span class="detail-val" id="cardQtyOut">0</span>
+                    </li>
+                    <li class="detail-item">
+                        <span class="detail-key" style="min-width: 80px;">Remark</span>
+                        <span class="detail-val" id="cardRemark" style="font-size:0.8rem; font-style:italic;">-</span>
+                    </li>
+                </ul>
+
+                <div class="action-bar">
+                    <button class="btn-action btn-in" onclick="openTransactionModal('IN')">
+                        <span>+</span> IN (GR)
+                    </button>
+                    <button class="btn-action btn-out" onclick="openTransactionModal('OUT')">
+                        <span>-</span> OUT (GI)
+                    </button>
+                </div>
+            </div>
+
+            <!-- History Table Card -->
+            <div class="card" style="margin-top: 15px;">
+                <div class="card-header">
+                    <span class="card-title">Riwayat Transaksi (History)</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="stock-table">
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Tipe</th>
+                                <th>Ref No</th>
+                                <th style="text-align: center;">Qty</th>
+                                <th style="text-align: center;">Fisik</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            <tr><td colspan="5" style="text-align:center; color:#9ca3af;">Memuat data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODAL POPUP -->
+    <div id="trxModal" class="modal-overlay">
+        <div class="modal">
+            <h3 id="modalTitle" class="modal-title">Input Transaksi</h3>
+            
+            <div style="background:#f3f4f6; padding:10px; border-radius:4px; margin-bottom:15px;">
+                <span class="modal-label">Material:</span>
+                <strong id="modalMaterialCode" style="color:var(--primary)">-</strong>
+                <div id="modalMaterialDesc" style="font-size:0.85rem; color:#4b5563; margin-top:2px;">-</div>
+            </div>
+
+            <label id="lblRefNo" class="modal-label">Nomor Referensi:</label>
+            <input type="text" id="modalRefNo" class="modal-input" placeholder="Contoh: 123456">
+
+            <label class="modal-label">Qty:</label>
+            <input type="number" id="modalQty" class="modal-input" placeholder="0" min="1">
+            
+            <div id="modalHint" style="font-size:0.8rem; color:#ef4444; margin-bottom:10px;">
+                *Qty Physical akan otomatis berubah.
+            </div>
+
+            <div class="modal-actions">
+                <button id="btnCancelTrx" class="btn-cancel">Batal</button>
+                <button id="btnConfirmTrx" class="btn-confirm">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; <span id="year"></span> Distribution Center System</p>
+    </footer>
+
+    <script>
+        // --- SETUP URL ---
+        const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbwzW5A58AyEb59xTX6jzJbknkhwXRr97F1wphvh-DghEyloCpa5kuqfcR_83TKCENc/exec"; 
+
+        // State Global
+        let binItemsCache = [];
+        let selectedItem = null;
+        let currentBinCode = null;
+        let currentTrxType = "OUT"; 
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('year').textContent = new Date().getFullYear();
+            
+            document.getElementById('btnSelectBin').addEventListener('click', handleBinSelection);
+            document.getElementById('btnRefreshBins').addEventListener('click', fetchBinList);
+            document.getElementById('btnOpenCard').addEventListener('click', handleMaterialSelection);
+            
+            document.getElementById('btnCancelTrx').addEventListener('click', closeModal);
+            document.getElementById('btnConfirmTrx').addEventListener('click', submitTransaction);
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const binCode = urlParams.get('bin');
+            if (binCode) {
+                currentBinCode = binCode;
+                loadBinItems(binCode);
+            } else {
+                showHomeState();
+                fetchBinList();
+            }
+        });
+
+        // --- FETCH BIN LIST ---
+        async function fetchBinList() {
+            const selectEl = document.getElementById('manualBinInput');
+            selectEl.innerHTML = '<option value="" disabled selected>Loading...</option>';
+            selectEl.disabled = true;
+
+            try {
+                const response = await fetch(`${API_ENDPOINT}?action=get_bin_list`);
+                const bins = await response.json();
+                
+                if (!bins || bins.length === 0) {
+                    selectEl.innerHTML = '<option value="" disabled selected>No BINs Found</option>';
+                    return;
+                }
+
+                let optionsHTML = '<option value="" disabled selected>-- Pilih Lokasi --</option>';
+                bins.forEach(bin => optionsHTML += `<option value="${bin}">${bin}</option>`);
+                selectEl.innerHTML = optionsHTML;
+                selectEl.disabled = false;
+            } catch (err) {
+                console.error(err);
+                selectEl.innerHTML = '<option value="" disabled selected>Error</option>';
+            }
+        }
+
+        // --- LOAD ITEMS ---
+        function handleBinSelection() {
+            const val = document.getElementById('manualBinInput').value;
+            if (val) {
+                try {
+                    const newUrl = `${window.location.pathname}?bin=${encodeURIComponent(val)}`;
+                    window.history.pushState({path:newUrl},'',newUrl);
+                } catch(e){}
+                currentBinCode = val;
+                loadBinItems(val);
+            } else {
+                alert("Silakan pilih BIN terlebih dahulu.");
+            }
+        }
+
+        async function loadBinItems(binCode) {
+            showLoading(true, "Mengambil Data Material...");
+            updateHeader(binCode);
+
+            try {
+                const response = await fetch(`${API_ENDPOINT}?bin=${encodeURIComponent(binCode)}`);
+                const data = await response.json();
+                
+                if (!data || data.length === 0) {
+                    alert(`Tidak ada material ditemukan di BIN: ${binCode}.`);
+                    showHomeState();
+                } else {
+                    binItemsCache = data;
+                    populateMaterialDropdown(data);
+                    showMaterialSelectState();
+                }
+            } catch (err) {
+                alert("Gagal mengambil data: " + err.message);
+                showHomeState();
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function populateMaterialDropdown(items) {
+            const selectEl = document.getElementById('materialInput');
+            document.getElementById('materialCount').textContent = items.length;
+            
+            let optionsHTML = '<option value="" disabled selected>-- Pilih Material --</option>';
+            items.forEach((item, index) => {
+                optionsHTML += `<option value="${index}">${item.material} - ${item.desc}</option>`;
+            });
+            selectEl.innerHTML = optionsHTML;
+        }
+
+        // --- SHOW SINGLE CARD & HISTORY ---
+        function handleMaterialSelection() {
+            const index = document.getElementById('materialInput').value;
+            if (index === "") {
+                alert("Pilih material terlebih dahulu!");
+                return;
+            }
+            
+            selectedItem = binItemsCache[index];
+            renderSingleCard(selectedItem);
+            // Panggil fungsi untuk mengambil history
+            loadHistory(currentBinCode, selectedItem.material);
+        }
+
+        async function loadHistory(bin, material) {
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Memuat riwayat...</td></tr>';
+            
+            try {
+                const url = `${API_ENDPOINT}?action=get_history&bin=${encodeURIComponent(bin)}&material=${encodeURIComponent(material)}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                tbody.innerHTML = '';
+                
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#9ca3af; font-size:0.85rem; padding:20px;">Belum ada riwayat transaksi.</td></tr>';
+                    return;
+                }
+                
+                data.forEach(row => {
+                    let typeBadge = '';
+                    if(row.type === 'GOODS RECEIPT') {
+                        typeBadge = '<span class="status-badge badge-plus" style="font-size:0.7rem;">IN</span>';
+                    } else {
+                        typeBadge = '<span class="status-badge badge-minus" style="font-size:0.7rem;">OUT</span>';
+                    }
+                    
+                    // Format Date sederhana
+                    let dateDisplay = row.date;
+                    try {
+                        const d = new Date(row.date);
+                        if (!isNaN(d)) {
+                            // dd/MM HH:mm
+                            dateDisplay = d.getDate().toString().padStart(2,'0') + '/' + 
+                                          (d.getMonth()+1).toString().padStart(2,'0') + ' ' + 
+                                          d.getHours().toString().padStart(2,'0') + ':' + 
+                                          d.getMinutes().toString().padStart(2,'0');
+                        }
+                    } catch(e){}
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${dateDisplay}</td>
+                        <td>${typeBadge}</td>
+                        <td style="font-size:0.8rem;">${row.ref}</td>
+                        <td style="text-align: center; font-weight:bold;">${row.qty}</td>
+                        <td style="text-align: center;">${row.balance}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                
+            } catch(err) {
+                console.error(err);
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Gagal memuat.</td></tr>';
+            }
+        }
+
+        function renderSingleCard(item) {
+            document.getElementById('homeState').classList.add('hidden');
+            document.getElementById('materialSelectState').classList.add('hidden');
+            document.getElementById('singleCardState').classList.remove('hidden');
+
+            const sys = parseFloat(item.soh) || 0;
+            const phys = parseFloat(item.physical) || 0;
+            const variance = phys - sys;
+
+            document.getElementById('cardMaterial').textContent = item.material;
+            document.getElementById('cardDesc').textContent = item.desc;
+            document.getElementById('cardMpn').textContent = item.mpn || '-';
+            document.getElementById('cardBin').textContent = currentBinCode;
+            
+            document.getElementById('cardSoh').textContent = sys;
+            document.getElementById('cardPhysical').textContent = phys;
+            document.getElementById('cardUom1').textContent = item.uom || 'Unit';
+            document.getElementById('cardUom2').textContent = item.uom || 'Unit';
+
+            document.getElementById('cardNoGr').textContent = item.no_gr || '-';
+            document.getElementById('cardNoGi').textContent = item.no_gi || '-';
+            document.getElementById('cardQtyIn').textContent = item.qty_in || '0';
+            document.getElementById('cardQtyOut').textContent = item.qty_out || '0';
+            document.getElementById('cardRemark').textContent = item.remark || '-';
+
+            document.getElementById('lastUpdated').textContent = "Updated: " + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+
+            const badgeEl = document.getElementById('cardStatusBadge');
+            if (variance === 0) {
+                badgeEl.innerHTML = '<span class="status-badge badge-ok">MATCH (OK)</span>';
+            } else if (variance > 0) {
+                badgeEl.innerHTML = '<span class="status-badge badge-plus">PLUS (+' + variance + ')</span>';
+            } else {
+                badgeEl.innerHTML = '<span class="status-badge badge-minus">MINUS (' + variance + ')</span>';
+            }
+        }
+
+        // --- TRANSACTION LOGIC ---
+        window.openTransactionModal = function(type) {
+            if (!selectedItem) return;
+            currentTrxType = type;
+
+            const modalTitle = document.getElementById('modalTitle');
+            const lblRef = document.getElementById('lblRefNo');
+            const hint = document.getElementById('modalHint');
+
+            if (type === "IN") {
+                modalTitle.textContent = "Input Penerimaan (GR)";
+                modalTitle.style.color = "var(--primary)";
+                lblRef.textContent = "Nomor GR (Dokumen Ref):";
+                hint.textContent = "*Stok Physical akan BERTAMBAH.";
+                hint.style.color = "var(--primary)";
+            } else {
+                modalTitle.textContent = "Input Pengeluaran (GI)";
+                modalTitle.style.color = "#991b1b"; 
+                lblRef.textContent = "Nomor GI (Dokumen Ref):";
+                hint.textContent = "*Stok Physical akan BERKURANG.";
+                hint.style.color = "#ef4444";
+            }
+
+            document.getElementById('modalMaterialCode').textContent = selectedItem.material;
+            document.getElementById('modalMaterialDesc').textContent = selectedItem.desc;
+            document.getElementById('modalRefNo').value = ''; 
+            document.getElementById('modalQty').value = ''; 
+            
+            document.getElementById('trxModal').style.display = 'flex';
+            document.getElementById('modalRefNo').focus();
+        }
+
+        function closeModal() {
+            document.getElementById('trxModal').style.display = 'none';
+        }
+
+        async function submitTransaction() {
+            const refNo = document.getElementById('modalRefNo').value.trim();
+            const qtyStr = document.getElementById('modalQty').value;
+            const qty = parseInt(qtyStr);
+
+            if (!refNo) { alert("Nomor Referensi wajib diisi!"); return; }
+            if (!qty || qty <= 0) { alert("Masukkan jumlah Qty yang valid."); return; }
+
+            const btnConfirm = document.getElementById('btnConfirmTrx');
+            const originalText = btnConfirm.textContent;
+            btnConfirm.textContent = "Menyimpan...";
+            btnConfirm.disabled = true;
+
+            try {
+                const url = `${API_ENDPOINT}?action=update_stock&bin=${encodeURIComponent(currentBinCode)}&material=${encodeURIComponent(selectedItem.material)}&qty=${qty}&ref_no=${encodeURIComponent(refNo)}&trx_type=${currentTrxType}`;
+                
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    alert("Berhasil! Transaksi tercatat.");
+                    closeModal();
+                    
+                    // Reload data untuk bin ini
+                    await loadBinItems(currentBinCode);
+                    
+                    // Refresh tampilan card
+                    const updatedItem = binItemsCache.find(i => i.material === selectedItem.material);
+                    if (updatedItem) {
+                        selectedItem = updatedItem;
+                        renderSingleCard(selectedItem);
+                    }
+                    
+                    // Refresh History
+                    loadHistory(currentBinCode, selectedItem.material);
+
+                } else {
+                    throw new Error(result.message || "Gagal menyimpan.");
+                }
+
+            } catch (err) {
+                alert("Error: " + err.message);
+            } finally {
+                btnConfirm.textContent = originalText;
+                btnConfirm.disabled = false;
+            }
+        }
+
+        // --- UTILS & NAVIGATION ---
+        function updateHeader(bin) {
+            document.getElementById('headerBinDisplay').textContent = bin ? `BIN : ${bin.toUpperCase()}` : 'SCAN QR';
+        }
+        
+        function showLoading(show, text) {
+            const loader = document.getElementById('loadingState');
+            if (text) document.getElementById('loadingText').textContent = text;
+            loader.classList.toggle('hidden', !show);
+            
+            if (show) {
+                document.getElementById('homeState').classList.add('hidden');
+                document.getElementById('materialSelectState').classList.add('hidden');
+                document.getElementById('singleCardState').classList.add('hidden');
+            }
+        }
+
+        function showHomeState() {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('materialSelectState').classList.add('hidden');
+            document.getElementById('singleCardState').classList.add('hidden');
+            document.getElementById('homeState').classList.remove('hidden');
+            updateHeader('');
+        }
+
+        function showMaterialSelectState() {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('homeState').classList.add('hidden');
+            document.getElementById('singleCardState').classList.add('hidden');
+            document.getElementById('materialSelectState').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
