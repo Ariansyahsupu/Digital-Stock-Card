@@ -202,8 +202,9 @@
         .btn-primary:disabled { background-color: #9ca3af; cursor: not-allowed; }
         
         .btn-scan { 
-            width: 100%; padding: 12px; background-color: var(--secondary); margin-bottom: 10px;
-            color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+            width: 100%; padding: 15px; background-color: var(--secondary); margin-bottom: 15px;
+            color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1.1rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
         }
         .btn-scan:hover { background-color: #374151; }
 
@@ -214,7 +215,7 @@
         .badge-minus { background-color: var(--status-minus-bg); color: var(--status-minus-text); }
 
         /* --- MODAL --- */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: none; justify-content: center; align-items: center; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; display: none; justify-content: center; align-items: center; }
         .modal { background: white; width: 90%; max-width: 400px; border-radius: 8px; padding: 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
         .modal-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 15px; color: var(--secondary); }
         .modal-label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px; }
@@ -225,7 +226,8 @@
         .btn-confirm:disabled { background: #9ca3af; }
 
         /* Scanner Specific */
-        #reader { width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 10px; }
+        #reader { width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 10px; background: black; }
+        #reader video { object-fit: cover; }
 
         .hidden { display: none !important; }
         .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; margin: 0 auto; }
@@ -238,7 +240,7 @@
     <header>
         <div class="header-content">
             <div class="brand"><h1>Digital Stock Card</h1></div>
-            <div class="bin-indicator" id="headerBinDisplay">SCAN QR</div>
+            <div class="bin-indicator" id="headerBinDisplay">READY</div>
         </div>
     </header>
 
@@ -254,27 +256,23 @@
         <!-- 1. SELECT BIN (HOME) -->
         <div id="homeState" class="card hidden">
             <div style="padding: 40px 20px; text-align: center;">
-                <h3 style="margin-bottom: 8px; color: var(--secondary);">Langkah 1: Pilih Lokasi</h3>
-                <p style="margin-bottom: 24px; color: var(--text-muted); font-size: 0.9rem;">Scan QR di Rak atau Pilih Manual</p>
+                
+                <!-- NEW: Tombol Scan QR yang Dominan -->
+                <button id="btnStartScan" class="btn-scan">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+                    SCAN QR RAK
+                </button>
+
+                <p style="margin: 20px 0 10px; color: var(--text-muted); font-size: 0.85rem;">Atau pilih manual:</p>
+
                 <div style="max-width: 300px; margin: 0 auto;">
-                    
-                    <!-- NEW: Tombol Scan QR -->
-                    <button id="btnStartScan" class="btn-scan">
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
-                        Buka Kamera (Scan QR)
-                    </button>
-
-                    <div style="margin: 15px 0; color: #9ca3af; font-size: 0.8rem; display: flex; align-items: center; gap: 10px;">
-                        <span style="flex:1; height:1px; background:#e5e7eb;"></span> ATAU <span style="flex:1; height:1px; background:#e5e7eb;"></span>
-                    </div>
-
                     <select id="manualBinInput" class="form-select">
                         <option value="" disabled selected>Loading BIN list...</option>
                     </select>
-                    <button id="btnSelectBin" class="btn-primary">Lanjut (Manual)</button>
+                    <button id="btnSelectBin" class="btn-primary" style="padding: 8px;">Pilih</button>
                     
                     <div style="margin-top: 15px;">
-                       <button id="btnRefreshBins" style="background:none; border:none; color:var(--primary); font-size:0.8rem; cursor:pointer; text-decoration:underline;">Refresh BIN List</button>
+                       <button id="btnRefreshBins" style="background:none; border:none; color:var(--primary); font-size:0.8rem; cursor:pointer; text-decoration:underline;">Refresh Data</button>
                     </div>
                 </div>
             </div>
@@ -283,16 +281,16 @@
         <!-- 2. SELECT MATERIAL -->
         <div id="materialSelectState" class="card hidden">
             <div class="card-header">
-                <button class="btn-back" onclick="showHomeState()">← Ganti Bin</button>
-                <span class="card-title">Langkah 2: Pilih Material</span>
+                <button class="btn-back" onclick="showHomeState()">← Scan Ulang</button>
+                <span class="card-title">Pilih Material</span>
             </div>
             <div style="padding: 30px 20px; text-align: center;">
                 <p style="margin-bottom: 16px; color: var(--text-muted); font-size: 0.9rem;">
-                    Ditemukan <strong id="materialCount" style="color:var(--text-main)">0</strong> material di Bin ini.
+                    Ditemukan <strong id="materialCount" style="color:var(--text-main)">0</strong> material.
                 </p>
                 <div style="max-width: 350px; margin: 0 auto;">
                     <select id="materialInput" class="form-select">
-                        <option value="" disabled selected>-- Pilih Material --</option>
+                        <option value="" disabled selected>-- Klik disini --</option>
                     </select>
                     <button id="btnOpenCard" class="btn-primary">Buka Kartu Stok</button>
                 </div>
@@ -304,7 +302,7 @@
             <!-- Main Info Card -->
             <div class="card">
                 <div class="card-header">
-                    <button class="btn-back" onclick="showMaterialSelectState()">← Kembali</button>
+                    <button class="btn-back" onclick="showMaterialSelectState()">← List Material</button>
                     <span id="lastUpdated" style="font-size: 0.75rem; color: var(--text-muted);">Updated: --</span>
                 </div>
                 
@@ -389,12 +387,12 @@
 
     </div>
 
-    <!-- MODAL POPUP - SCANNER -->
-    <div id="scannerModal" class="modal-overlay">
-        <div class="modal" style="text-align: center;">
-            <h3 class="modal-title">Scan QR Bin</h3>
-            <div id="reader" style="width:100%"></div>
-            <button id="btnCloseScanner" class="btn-cancel" style="width:100%; margin-top:10px;">Tutup Kamera</button>
+    <!-- MODAL POPUP - SCANNER (Full Screen Overlay) -->
+    <div id="scannerModal" class="modal-overlay" style="align-items: flex-start; padding-top: 50px;">
+        <div class="modal" style="text-align: center; width: 95%; background: transparent; box-shadow: none;">
+            <h3 style="color: white; margin-bottom: 20px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">Arahkan ke QR Code</h3>
+            <div id="reader" style="width:100%; border: 2px solid white;"></div>
+            <button id="btnCloseScanner" class="btn-cancel" style="width:100%; margin-top:20px; background: white; color: black;">Tutup Kamera</button>
         </div>
     </div>
 
@@ -439,7 +437,7 @@
         let selectedItem = null;
         let currentBinCode = null;
         let currentTrxType = "OUT"; 
-        let html5QrcodeScanner = null;
+        let html5Qrcode = null; // Ganti Scanner UI dengan class Core
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('year').textContent = new Date().getFullYear();
@@ -472,25 +470,32 @@
             }
         });
 
-        // --- SCANNER LOGIC ---
+        // --- SCANNER LOGIC (LANGSUNG KAMERA BELAKANG) ---
         function startScanner() {
             document.getElementById('scannerModal').style.display = 'flex';
             
-            if (!html5QrcodeScanner) {
-                html5QrcodeScanner = new Html5QrcodeScanner(
-                    "reader", { fps: 10, qrbox: 250 }
-                );
+            // Gunakan Html5Qrcode class untuk kontrol penuh (kamera belakang langsung)
+            if (!html5Qrcode) {
+                html5Qrcode = new Html5Qrcode("reader");
             }
             
-            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+            
+            // Preferensi kamera belakang: { facingMode: "environment" }
+            html5Qrcode.start({ facingMode: "environment" }, config, onScanSuccess)
+            .catch(err => {
+                console.error("Error starting scanner", err);
+                alert("Gagal membuka kamera: " + err);
+                document.getElementById('scannerModal').style.display = 'none';
+            });
         }
 
         function stopScanner() {
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.clear().then(() => {
+            if (html5Qrcode) {
+                html5Qrcode.stop().then(() => {
                     document.getElementById('scannerModal').style.display = 'none';
-                }).catch(error => {
-                    console.error("Failed to clear html5QrcodeScanner. ", error);
+                }).catch(err => {
+                    console.log("Stop failed: ", err);
                     document.getElementById('scannerModal').style.display = 'none';
                 });
             } else {
@@ -499,20 +504,15 @@
         }
 
         function onScanSuccess(decodedText, decodedResult) {
-            // Stop scanning
+            // Hentikan scanner
             stopScanner();
-            // Proceed with the scanned code
-            alert("QR Terdeteksi: " + decodedText);
+            // Langsung proses TANPA Alert
             proceedToBin(decodedText);
-        }
-
-        function onScanFailure(error) {
-            // console.warn(`Code scan error = ${error}`);
         }
 
         // --- MAIN LOGIC ---
         function proceedToBin(binCode) {
-            // Update URL for refreshing
+            // Update URL
             try {
                 const newUrl = `${window.location.pathname}?bin=${encodeURIComponent(binCode)}`;
                 window.history.pushState({path:newUrl},'',newUrl);
@@ -547,7 +547,7 @@
         }
 
         async function loadBinItems(binCode) {
-            showLoading(true, "Mencari Data BIN: " + binCode);
+            showLoading(true, "Memuat List Material...");
             updateHeader(binCode);
 
             try {
@@ -555,11 +555,13 @@
                 const data = await response.json();
                 
                 if (!data || data.length === 0) {
-                    alert(`Data tidak ditemukan untuk BIN: ${binCode}.\nPastikan QR Code sesuai dengan data di Spreadsheet.`);
+                    // Jika kosong, tampilkan alert (ini wajar karena tidak ada data)
+                    alert(`Data tidak ditemukan untuk BIN: ${binCode}.`);
                     showHomeState();
                 } else {
                     binItemsCache = data;
                     populateMaterialDropdown(data);
+                    // Langsung masuk ke pemilihan material
                     showMaterialSelectState();
                 }
             } catch (err) {
@@ -576,6 +578,7 @@
             
             let optionsHTML = '<option value="" disabled selected>-- Pilih Material --</option>';
             items.forEach((item, index) => {
+                // Tampilkan Kode Material saja sesuai permintaan agar simple
                 optionsHTML += `<option value="${index}">${item.material} - ${item.desc}</option>`;
             });
             selectEl.innerHTML = optionsHTML;
@@ -760,7 +763,7 @@
             }
         }
 
-        // --- UTILS ---
+        // --- UTILS & NAVIGATION ---
         function updateHeader(bin) {
             document.getElementById('headerBinDisplay').textContent = bin ? `BIN : ${bin.toUpperCase()}` : 'SCAN QR';
         }
