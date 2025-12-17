@@ -16,6 +16,7 @@
             --primary-light: #10b981; /* Emerald */
             --secondary: #1f2937;     /* Charcoal */
             --accent: #4f46e5;        /* Indigo */
+            --accent-hover: #4338ca;  /* Darker Indigo */
             --danger: #ef4444;        /* Red */
             --warning-bg: #fee2e2;    /* Light Red */
             --bg-body: #f3f4f6;       /* Light Grey */
@@ -181,20 +182,55 @@
         .detail-key { color: var(--text-muted); }
         .detail-val { font-weight: 500; color: var(--secondary); text-align: right; }
 
-        .action-bar { padding: 16px; background-color: #f9fafb; display: flex; gap: 10px; border-top: 1px solid var(--border); }
-        .btn-action { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        /* Actions */
+        .action-bar {
+            padding: 16px;
+            background-color: #f9fafb;
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid var(--border);
+        }
+        .btn-action {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        /* Button Colors */
         .btn-in { background-color: var(--primary); color: white; }
-        .btn-out { background-color: var(--secondary); color: white; }
+        .btn-in:hover { background-color: var(--primary-light); }
         
+        .btn-out { background-color: var(--secondary); color: white; }
+        .btn-out:hover { background-color: #374151; }
+
+        /* New Styling for Cek Fisik Button */
+        .btn-count { background-color: var(--accent); color: white; }
+        .btn-count:hover { background-color: var(--accent-hover); }
+
+        /* Table & History */
         .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         .stock-table { width: 100%; border-collapse: collapse; min-width: 100%; }
         .stock-table th { text-align: left; padding: 10px; background-color: #f9fafb; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; border-bottom: 2px solid var(--border); white-space: nowrap; }
         .stock-table td { padding: 10px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; font-size: 0.85rem; color: var(--text-main); }
 
+        /* Buttons & Inputs */
         .btn-back { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 5px; }
-        .btn-download { background: none; border: none; cursor: pointer; color: var(--primary); padding: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-        .btn-download:hover { color: var(--primary-light); background-color: #f0fdf4; border-radius: 4px; }
+        .btn-back:hover { color: var(--secondary); text-decoration: underline; }
         
+        .btn-download { 
+            background: none; border: none; cursor: pointer; color: var(--primary);
+            padding: 4px; display: flex; align-items: center; justify-content: center; 
+            transition: all 0.2s;
+        }
+        .btn-download:hover { color: var(--primary-light); background-color: #f0fdf4; border-radius: 4px; }
+
         .btn-primary { width: 100%; padding: 12px; background-color: var(--primary); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
         .btn-primary:disabled { background-color: #9ca3af; cursor: not-allowed; }
         
@@ -253,6 +289,7 @@
         <!-- 1. HOME STATE -->
         <div id="homeState" class="card hidden">
             <div style="padding: 60px 20px; text-align: center;">
+                
                 <h3 style="margin-bottom: 40px; color: var(--secondary); font-size: 1.2rem;">Inventory Control<br>Distribution Center</h3>
                 
                 <button id="btnStartScan" class="btn-scan">
@@ -294,7 +331,7 @@
             </div>
         </div>
 
-        <!-- 3. SINGLE CARD VIEW -->
+        <!-- 3. SINGLE CARD VIEW WRAPPER FOR PDF -->
         <div id="pdfContainer">
             <div id="singleCardState" class="hidden">
                 <div class="card">
@@ -661,8 +698,7 @@
 
             document.getElementById('modalMaterialCode').textContent = selectedItem.material;
             document.getElementById('modalMaterialDesc').textContent = selectedItem.desc;
-            document.getElementById('modalRefNo').value = ''; 
-            document.getElementById('modalQty').value = ''; 
+            document.getElementById('modalRefNo').value = ''; document.getElementById('modalQty').value = ''; 
             document.getElementById('modalPic').value = ''; // Reset PIC
             document.getElementById('trxModal').style.display = 'flex'; document.getElementById('modalQty').focus();
         }
@@ -686,8 +722,9 @@
                 const url = `${API_ENDPOINT}?action=update_stock&bin=${encodeURIComponent(currentBinCode)}&material=${encodeURIComponent(selectedItem.material)}&qty=${qty}&ref_no=${encodeURIComponent(refNo)}&trx_type=${currentTrxType}&pic=${encodeURIComponent(picName)}`;
                 const response = await fetch(url);
                 const result = await response.json();
+                
                 if (result.status === 'success') {
-                    alert("Berhasil! Transaksi tercatat.");
+                    // Alert removed here per previous request
                     closeModal();
                     await loadBinItems(currentBinCode);
                     const updatedItem = binItemsCache.find(i => i.material === selectedItem.material);
