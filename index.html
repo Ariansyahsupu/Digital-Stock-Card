@@ -12,6 +12,7 @@
             --primary: #064e3b;       /* Dark Emerald */
             --primary-light: #10b981; /* Emerald */
             --secondary: #1f2937;     /* Charcoal */
+            --accent: #4f46e5;        /* Indigo for Cycle Count */
             --bg-body: #f3f4f6;       /* Light Grey */
             --bg-card: #ffffff;
             --border: #e5e7eb;
@@ -159,27 +160,33 @@
         .action-bar {
             padding: 16px;
             background-color: #f9fafb;
-            display: flex;
-            gap: 10px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr; /* 3 Tombol Sejajar */
+            gap: 8px;
             border-top: 1px solid var(--border);
         }
         .btn-action {
-            flex: 1;
-            padding: 12px;
+            padding: 10px 5px;
             border: none;
             border-radius: 6px;
             font-weight: 600;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 0.9rem;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 4px;
+            text-align: center;
         }
         .btn-in { background-color: var(--primary); color: white; }
         .btn-in:hover { background-color: var(--primary-light); }
+        
         .btn-out { background-color: var(--secondary); color: white; }
         .btn-out:hover { background-color: #374151; }
+
+        .btn-count { background-color: var(--accent); color: white; }
+        .btn-count:hover { background-color: #4338ca; }
 
         /* Table & History */
         .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -214,6 +221,7 @@
         .badge-ok { background-color: var(--status-ok-bg); color: var(--status-ok-text); }
         .badge-plus { background-color: var(--status-plus-bg); color: var(--status-plus-text); }
         .badge-minus { background-color: var(--status-minus-bg); color: var(--status-minus-text); }
+        .badge-count { background-color: #e0e7ff; color: #3730a3; } /* Indigo badge for Cycle Count */
 
         /* --- MODAL --- */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; display: none; justify-content: center; align-items: center; }
@@ -341,6 +349,10 @@
                         <span class="detail-val" id="cardQtyOut">0</span>
                     </li>
                     <li class="detail-item">
+                        <span class="detail-key">PIC</span>
+                        <span class="detail-val" id="cardPic">-</span>
+                    </li>
+                    <li class="detail-item">
                         <span class="detail-key" style="min-width: 80px;">Remark</span>
                         <span class="detail-val" id="cardRemark" style="font-size:0.8rem; font-style:italic;">-</span>
                     </li>
@@ -348,10 +360,13 @@
 
                 <div class="action-bar">
                     <button class="btn-action btn-in" onclick="openTransactionModal('IN')">
-                        <span>+</span> IN (GR)
+                        <span style="font-size:1.2rem;">+</span> IN (GR)
                     </button>
                     <button class="btn-action btn-out" onclick="openTransactionModal('OUT')">
-                        <span>-</span> OUT (GI)
+                        <span style="font-size:1.2rem;">-</span> OUT (GI)
+                    </button>
+                    <button class="btn-action btn-count" onclick="openTransactionModal('COUNT')">
+                        <span style="font-size:1.2rem;">✓</span> Cek Fisik
                     </button>
                 </div>
             </div>
@@ -405,7 +420,7 @@
             <label id="lblRefNo" class="modal-label">Nomor Referensi:</label>
             <input type="text" id="modalRefNo" class="modal-input" placeholder="Contoh: 123456">
 
-            <label class="modal-label">Qty:</label>
+            <label id="lblQty" class="modal-label">Qty:</label>
             <input type="number" id="modalQty" class="modal-input" placeholder="0" min="1">
             
             <div id="modalHint" style="font-size:0.8rem; color:#ef4444; margin-bottom:10px;">
@@ -582,8 +597,10 @@
                     let typeBadge = '';
                     if(row.type === 'GOODS RECEIPT') {
                         typeBadge = '<span class="status-badge badge-plus" style="font-size:0.7rem;">IN</span>';
-                    } else {
+                    } else if(row.type === 'GOODS ISSUE') {
                         typeBadge = '<span class="status-badge badge-minus" style="font-size:0.7rem;">OUT</span>';
+                    } else if(row.type === 'CYCLE COUNT') {
+                        typeBadge = '<span class="status-badge badge-count" style="font-size:0.7rem;">OPNAME</span>';
                     }
                     
                     let dateDisplay = row.date;
@@ -637,6 +654,7 @@
             document.getElementById('cardNoGi').textContent = item.no_gi || '-';
             document.getElementById('cardQtyIn').textContent = item.qty_in || '0';
             document.getElementById('cardQtyOut').textContent = item.qty_out || '0';
+            document.getElementById('cardPic').textContent = item.pic || '-';
             document.getElementById('cardRemark').textContent = item.remark || '-';
 
             document.getElementById('lastUpdated').textContent = "Updated: " + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
@@ -658,20 +676,30 @@
 
             const modalTitle = document.getElementById('modalTitle');
             const lblRef = document.getElementById('lblRefNo');
+            const lblQty = document.getElementById('lblQty');
             const hint = document.getElementById('modalHint');
 
             if (type === "IN") {
                 modalTitle.textContent = "Input Penerimaan (GR)";
                 modalTitle.style.color = "var(--primary)";
                 lblRef.textContent = "Nomor GR (Dokumen Ref):";
+                lblQty.textContent = "Qty Masuk:";
                 hint.textContent = "*Stok Physical akan BERTAMBAH.";
                 hint.style.color = "var(--primary)";
-            } else {
+            } else if (type === "OUT") {
                 modalTitle.textContent = "Input Pengeluaran (GI)";
                 modalTitle.style.color = "#991b1b"; 
                 lblRef.textContent = "Nomor GI (Dokumen Ref):";
+                lblQty.textContent = "Qty Keluar:";
                 hint.textContent = "*Stok Physical akan BERKURANG.";
                 hint.style.color = "#ef4444";
+            } else if (type === "COUNT") {
+                modalTitle.textContent = "Input Hasil Cek Fisik";
+                modalTitle.style.color = "var(--accent)"; 
+                lblRef.textContent = "Nomor Referensi (Opsional):";
+                lblQty.textContent = "Hasil Hitung (Angka Aktual):";
+                hint.textContent = "*Stok Physical akan DI-RESET ke angka ini.";
+                hint.style.color = "var(--accent)";
             }
 
             document.getElementById('modalMaterialCode').textContent = selectedItem.material;
@@ -680,7 +708,7 @@
             document.getElementById('modalQty').value = ''; 
             
             document.getElementById('trxModal').style.display = 'flex';
-            document.getElementById('modalRefNo').focus();
+            document.getElementById('modalQty').focus();
         }
 
         function closeModal() {
@@ -692,8 +720,9 @@
             const qtyStr = document.getElementById('modalQty').value;
             const qty = parseInt(qtyStr);
 
-            if (!refNo) { alert("Nomor Referensi wajib diisi!"); return; }
-            if (!qty || qty <= 0) { alert("Masukkan jumlah Qty yang valid."); return; }
+            // Validasi khusus untuk IN/OUT butuh No Ref, COUNT boleh kosong
+            if (currentTrxType !== "COUNT" && !refNo) { alert("Nomor Referensi wajib diisi!"); return; }
+            if (isNaN(qty) || qty < 0) { alert("Masukkan jumlah Qty yang valid."); return; }
 
             const btnConfirm = document.getElementById('btnConfirmTrx');
             const originalText = btnConfirm.textContent;
