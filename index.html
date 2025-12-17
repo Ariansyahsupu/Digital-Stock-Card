@@ -110,7 +110,7 @@
             display: inline-block;
         }
 
-        /* Grid Stats for Single Item */
+        /* Grid Stats */
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -202,11 +202,12 @@
         .btn-primary:disabled { background-color: #9ca3af; cursor: not-allowed; }
         
         .btn-scan { 
-            width: 100%; padding: 15px; background-color: var(--secondary); margin-bottom: 15px;
-            color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1.1rem;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            width: 100%; padding: 30px; background-color: var(--secondary); margin-bottom: 15px;
+            color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; font-size: 1.2rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: transform 0.1s;
         }
-        .btn-scan:hover { background-color: #374151; }
+        .btn-scan:active { transform: scale(0.98); }
+        .btn-scan svg { width: 48px; height: 48px; }
 
         /* Badges */
         .status-badge { padding: 4px 10px; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; display: inline-block; }
@@ -253,28 +254,22 @@
             </div>
         </div>
 
-        <!-- 1. SELECT BIN (HOME) -->
+        <!-- 1. HOME STATE (SCAN QR ONLY) -->
         <div id="homeState" class="card hidden">
-            <div style="padding: 40px 20px; text-align: center;">
+            <div style="padding: 80px 20px; text-align: center;">
                 
-                <!-- NEW: Tombol Scan QR yang Dominan -->
+                <h3 style="margin-bottom: 40px; color: var(--secondary); font-size: 1.2rem;">Inventory Control<br>Distribution Center</h3>
+
+                <!-- TOMBOL SCAN QR -->
                 <button id="btnStartScan" class="btn-scan">
-                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+                    <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
                     SCAN QR RAK
                 </button>
 
-                <p style="margin: 20px 0 10px; color: var(--text-muted); font-size: 0.85rem;">Atau pilih manual:</p>
+                <p style="margin-top: 20px; color: var(--text-muted); font-size: 0.9rem;">
+                    Arahkan kamera ke label QR Code di rak<br>untuk membuka kartu stok.
+                </p>
 
-                <div style="max-width: 300px; margin: 0 auto;">
-                    <select id="manualBinInput" class="form-select">
-                        <option value="" disabled selected>Loading BIN list...</option>
-                    </select>
-                    <button id="btnSelectBin" class="btn-primary" style="padding: 8px;">Pilih</button>
-                    
-                    <div style="margin-top: 15px;">
-                       <button id="btnRefreshBins" style="background:none; border:none; color:var(--primary); font-size:0.8rem; cursor:pointer; text-decoration:underline;">Refresh Data</button>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -286,7 +281,7 @@
             </div>
             <div style="padding: 30px 20px; text-align: center;">
                 <p style="margin-bottom: 16px; color: var(--text-muted); font-size: 0.9rem;">
-                    Ditemukan <strong id="materialCount" style="color:var(--text-main)">0</strong> material.
+                    Ditemukan <strong id="materialCount" style="color:var(--text-main)">0</strong> material di lokasi ini.
                 </p>
                 <div style="max-width: 350px; margin: 0 auto;">
                     <select id="materialInput" class="form-select">
@@ -437,18 +432,13 @@
         let selectedItem = null;
         let currentBinCode = null;
         let currentTrxType = "OUT"; 
-        let html5Qrcode = null; // Ganti Scanner UI dengan class Core
+        let html5Qrcode = null; 
+        let isScannerRunning = false;
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('year').textContent = new Date().getFullYear();
             
             // Event Listeners
-            document.getElementById('btnSelectBin').addEventListener('click', () => {
-                const val = document.getElementById('manualBinInput').value;
-                if(val) proceedToBin(val);
-                else alert("Pilih BIN terlebih dahulu");
-            });
-            document.getElementById('btnRefreshBins').addEventListener('click', fetchBinList);
             document.getElementById('btnOpenCard').addEventListener('click', handleMaterialSelection);
             
             // Scanner Events
@@ -466,36 +456,41 @@
                 proceedToBin(binCode);
             } else {
                 showHomeState();
-                fetchBinList();
             }
         });
 
-        // --- SCANNER LOGIC (LANGSUNG KAMERA BELAKANG) ---
+        // --- SCANNER LOGIC ---
         function startScanner() {
             document.getElementById('scannerModal').style.display = 'flex';
             
-            // Gunakan Html5Qrcode class untuk kontrol penuh (kamera belakang langsung)
             if (!html5Qrcode) {
                 html5Qrcode = new Html5Qrcode("reader");
             }
             
+            if (isScannerRunning) return;
+
             const config = { fps: 10, qrbox: { width: 250, height: 250 } };
             
-            // Preferensi kamera belakang: { facingMode: "environment" }
             html5Qrcode.start({ facingMode: "environment" }, config, onScanSuccess)
+            .then(() => {
+                isScannerRunning = true;
+            })
             .catch(err => {
                 console.error("Error starting scanner", err);
+                isScannerRunning = false;
                 alert("Gagal membuka kamera: " + err);
                 document.getElementById('scannerModal').style.display = 'none';
             });
         }
 
         function stopScanner() {
-            if (html5Qrcode) {
+            if (html5Qrcode && isScannerRunning) {
                 html5Qrcode.stop().then(() => {
+                    isScannerRunning = false;
                     document.getElementById('scannerModal').style.display = 'none';
                 }).catch(err => {
                     console.log("Stop failed: ", err);
+                    isScannerRunning = false; 
                     document.getElementById('scannerModal').style.display = 'none';
                 });
             } else {
@@ -504,15 +499,12 @@
         }
 
         function onScanSuccess(decodedText, decodedResult) {
-            // Hentikan scanner
             stopScanner();
-            // Langsung proses TANPA Alert
             proceedToBin(decodedText);
         }
 
         // --- MAIN LOGIC ---
         function proceedToBin(binCode) {
-            // Update URL
             try {
                 const newUrl = `${window.location.pathname}?bin=${encodeURIComponent(binCode)}`;
                 window.history.pushState({path:newUrl},'',newUrl);
@@ -520,30 +512,6 @@
             
             currentBinCode = binCode;
             loadBinItems(binCode);
-        }
-
-        async function fetchBinList() {
-            const selectEl = document.getElementById('manualBinInput');
-            selectEl.innerHTML = '<option value="" disabled selected>Loading...</option>';
-            selectEl.disabled = true;
-
-            try {
-                const response = await fetch(`${API_ENDPOINT}?action=get_bin_list`);
-                const bins = await response.json();
-                
-                if (!bins || bins.length === 0) {
-                    selectEl.innerHTML = '<option value="" disabled selected>No BINs Found</option>';
-                    return;
-                }
-
-                let optionsHTML = '<option value="" disabled selected>-- Pilih Lokasi --</option>';
-                bins.forEach(bin => optionsHTML += `<option value="${bin}">${bin}</option>`);
-                selectEl.innerHTML = optionsHTML;
-                selectEl.disabled = false;
-            } catch (err) {
-                console.error(err);
-                selectEl.innerHTML = '<option value="" disabled selected>Error</option>';
-            }
         }
 
         async function loadBinItems(binCode) {
@@ -555,13 +523,11 @@
                 const data = await response.json();
                 
                 if (!data || data.length === 0) {
-                    // Jika kosong, tampilkan alert (ini wajar karena tidak ada data)
                     alert(`Data tidak ditemukan untuk BIN: ${binCode}.`);
                     showHomeState();
                 } else {
                     binItemsCache = data;
                     populateMaterialDropdown(data);
-                    // Langsung masuk ke pemilihan material
                     showMaterialSelectState();
                 }
             } catch (err) {
@@ -578,7 +544,6 @@
             
             let optionsHTML = '<option value="" disabled selected>-- Pilih Material --</option>';
             items.forEach((item, index) => {
-                // Tampilkan Kode Material saja sesuai permintaan agar simple
                 optionsHTML += `<option value="${index}">${item.material} - ${item.desc}</option>`;
             });
             selectEl.innerHTML = optionsHTML;
