@@ -98,7 +98,7 @@
             margin-top: 20px;
             text-align: center;
             font-weight: 600;
-            display: none;
+            display: none; /* Hidden by default */
             animation: pulse 2s infinite;
             flex-direction: column;
             align-items: center;
@@ -182,7 +182,6 @@
         .detail-key { color: var(--text-muted); }
         .detail-val { font-weight: 500; color: var(--secondary); text-align: right; }
 
-        /* Actions */
         .action-bar {
             padding: 16px;
             background-color: #f9fafb;
@@ -482,11 +481,14 @@
             try {
                 const response = await fetch(`${API_ENDPOINT}?action=get_global_status`);
                 const data = await response.json();
+                const alarm = document.getElementById('globalAlarm');
+                
                 if (data.hasDeviation) {
-                    const alarm = document.getElementById('globalAlarm');
                     document.getElementById('deviationCount').textContent = data.count;
                     alarm.style.display = 'flex';
                     globalDeviations = data.items;
+                } else {
+                    alarm.style.display = 'none'; // Auto hide if resolved
                 }
             } catch(e) {
                 console.log("Global check skipped/failed");
@@ -724,13 +726,13 @@
                 const result = await response.json();
                 
                 if (result.status === 'success') {
-                    // Alert removed here per previous request
+                    // Alert removed - seamless update
                     closeModal();
                     await loadBinItems(currentBinCode);
                     const updatedItem = binItemsCache.find(i => i.material === selectedItem.material);
                     if (updatedItem) { selectedItem = updatedItem; renderSingleCard(selectedItem); }
                     loadHistory(currentBinCode, selectedItem.material);
-                    checkGlobalStatus();
+                    checkGlobalStatus(); // Update global alarm real-time
                 } else { throw new Error(result.message || "Gagal menyimpan."); }
             } catch (err) { alert("Error: " + err.message); } 
             finally { btnConfirm.textContent = originalText; btnConfirm.disabled = false; }
