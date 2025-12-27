@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,31 +7,21 @@
     
     <!-- Import Library -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
         :root {
-            /* Corporate Palette */
-            --primary: #064e3b;       /* Dark Emerald */
-            --primary-light: #10b981; /* Emerald */
-            --secondary: #1f2937;     /* Charcoal */
-            --accent: #4f46e5;        /* Indigo */
-            --accent-hover: #4338ca;  /* Darker Indigo */
-            --danger: #ef4444;        /* Red */
-            --warning-bg: #fee2e2;    /* Light Red */
-            --bg-body: #f3f4f6;       /* Light Grey */
+            /* Emerald Corporate Palette */
+            --primary: #064e3b;       
+            --primary-light: #10b981; 
+            --secondary: #1f2937;     
+            --accent: #4f46e5;        
+            --danger: #ef4444;        
+            --warning-bg: #fee2e2;    
+            --bg-body: #f3f4f6;       
             --bg-card: #ffffff;
             --border: #e5e7eb;
             --text-main: #111827;
             --text-muted: #6b7280;
-            
-            /* Status Colors */
-            --status-ok-bg: #d1fae5;
-            --status-ok-text: #065f46;
-            --status-plus-bg: #ffedd5;
-            --status-plus-text: #9a3412;
-            --status-minus-bg: #fee2e2;
-            --status-minus-text: #991b1b;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -78,48 +68,38 @@
             overflow: hidden;
             border: 1px solid var(--border);
         }
-        .card-header {
-            padding: 16px;
-            border-bottom: 1px solid var(--border);
-            background-color: #f9fafb;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .card-title { font-weight: 600; color: var(--secondary); font-size: 1rem;}
 
-        /* --- GLOBAL ALARM --- */
+        /* --- ALARM GLOBAL (RESORED) --- */
         #globalAlarm {
             background-color: var(--warning-bg);
-            border: 1px solid var(--danger);
+            border: 2px solid var(--danger);
             color: var(--danger);
-            padding: 12px;
-            border-radius: 8px;
+            padding: 16px;
+            border-radius: 12px;
             margin-top: 20px;
             text-align: center;
-            font-weight: 600;
-            display: none; /* Hidden by default */
-            animation: pulse 2s infinite;
+            font-weight: 800;
+            display: none; /* Akan muncul via JS jika ada selisih */
+            animation: pulse 1.5s infinite;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
         @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); transform: scale(1); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); transform: scale(1.02); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); transform: scale(1); }
         }
         .btn-alarm-detail {
             background-color: var(--danger);
             color: white;
             border: none;
-            padding: 5px 12px;
-            border-radius: 4px;
+            padding: 8px 16px;
+            border-radius: 6px;
             font-size: 0.8rem;
             cursor: pointer;
-            font-weight: 600;
+            font-weight: 800;
         }
-        .btn-alarm-detail:hover { background-color: #b91c1c; }
 
         /* --- RUNNING TEXT --- */
         .running-text-container {
@@ -145,126 +125,39 @@
         }
 
         /* --- COMPONENTS --- */
-        .material-list { display: flex; flex-direction: column; gap: 10px; }
+        .btn-scan { 
+            width: 100%; padding: 30px; background-color: var(--secondary); margin-bottom: 15px;
+            color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 1.2rem;
+        }
+
         .material-item {
             background: white; border: 1px solid var(--border); border-radius: 8px;
             padding: 15px; display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: transform 0.1s;
+            margin-bottom: 10px;
         }
-        .material-item:active { transform: scale(0.98); background-color: #f9fafb; }
-        
-        .mat-info { flex: 1; margin-right: 10px; }
-        .mat-code { font-weight: 700; color: var(--primary); font-size: 1rem; display: block; }
-        .mat-desc { font-size: 0.85rem; color: var(--text-muted); margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        
-        .btn-preview {
-            background-color: var(--secondary); color: white; border: none; padding: 8px 12px;
-            border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer;
-            white-space: nowrap; display: flex; align-items: center; gap: 5px;
-        }
-        .btn-preview:hover { background-color: #374151; }
+        .mat-code { font-weight: 700; color: var(--primary); font-size: 1rem; }
+        .mat-sloc-badge { font-size: 0.7rem; background: #eef2ff; color: var(--accent); padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px; }
 
-        .item-hero { padding: 20px; background-color: white; border-bottom: 1px solid var(--border); text-align: center; }
-        .hero-code { font-size: 1.25rem; font-weight: 700; color: var(--primary); margin-bottom: 5px; display: block; }
-        .hero-desc { font-size: 1rem; color: var(--text-main); margin-bottom: 5px; line-height: 1.4; }
-        .hero-meta { font-size: 0.8rem; color: var(--text-muted); background: #f3f4f6; padding: 4px 8px; border-radius: 4px; display: inline-block; }
-
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background-color: var(--border); border-bottom: 1px solid var(--border); }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; background-color: var(--border); gap: 1px; border-bottom: 1px solid var(--border); }
         .stat-cell { background-color: white; padding: 15px; text-align: center; }
-        .stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; display: block; }
-        .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--secondary); }
-        .stat-value.phys { color: var(--primary); }
-        .stat-sub { font-size: 0.75rem; color: #9ca3af; }
+        .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; display: block; font-weight: 800; }
+        .stat-value { font-size: 1.6rem; font-weight: 800; color: var(--secondary); }
 
-        .detail-list { padding: 0; margin: 0; list-style: none; }
-        .detail-item { display: flex; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #f3f4f6; font-size: 0.9rem; }
-        .detail-item:last-child { border-bottom: none; }
-        .detail-key { color: var(--text-muted); }
-        .detail-val { font-weight: 500; color: var(--secondary); text-align: right; }
+        .action-bar { padding: 16px; background-color: #f9fafb; display: flex; gap: 10px; border-top: 1px solid var(--border); }
+        .btn-action { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; color: white; }
 
-        .action-bar {
-            padding: 16px;
-            background-color: #f9fafb;
-            display: flex;
-            gap: 10px;
-            border-top: 1px solid var(--border);
-        }
-        .btn-action {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        /* Button Colors */
-        .btn-in { background-color: var(--primary); color: white; }
-        .btn-in:hover { background-color: var(--primary-light); }
-        
-        .btn-out { background-color: var(--secondary); color: white; }
-        .btn-out:hover { background-color: #374151; }
+        .stock-table { width: 100%; border-collapse: collapse; }
+        .stock-table th { text-align: left; padding: 10px; background-color: #f9fafb; color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; border-bottom: 2px solid var(--border); }
+        .stock-table td { padding: 10px; border-bottom: 1px solid #f3f4f6; font-size: 0.85rem; }
 
-        /* New Styling for Cek Fisik Button */
-        .btn-count { background-color: var(--accent); color: white; }
-        .btn-count:hover { background-color: var(--accent-hover); }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; display: none; justify-content: center; align-items: center; }
+        .modal { background: white; width: 90%; max-width: 400px; border-radius: 12px; padding: 25px; }
+        .modal-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid var(--border); border-radius: 6px; font-size: 1.1rem; }
 
-        /* Table & History */
-        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        .stock-table { width: 100%; border-collapse: collapse; min-width: 100%; }
-        .stock-table th { text-align: left; padding: 10px; background-color: #f9fafb; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; border-bottom: 2px solid var(--border); white-space: nowrap; }
-        .stock-table td { padding: 10px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; font-size: 0.85rem; color: var(--text-main); }
-
-        /* Buttons & Inputs */
-        .btn-back { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 5px; }
-        .btn-back:hover { color: var(--secondary); text-decoration: underline; }
-        
-        .btn-download { 
-            background: none; border: none; cursor: pointer; color: var(--primary);
-            padding: 4px; display: flex; align-items: center; justify-content: center; 
-            transition: all 0.2s;
-        }
-        .btn-download:hover { color: var(--primary-light); background-color: #f0fdf4; border-radius: 4px; }
-
-        .btn-primary { width: 100%; padding: 12px; background-color: var(--primary); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
-        .btn-primary:disabled { background-color: #9ca3af; cursor: not-allowed; }
-        
-        .btn-scan { 
-            width: 100%; padding: 30px; background-color: var(--secondary); margin-bottom: 15px;
-            color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; font-size: 1.2rem;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: transform 0.1s;
-        }
-        .btn-scan:active { transform: scale(0.98); }
-        .btn-scan svg { width: 48px; height: 48px; }
-
-        .status-badge { padding: 4px 10px; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; display: inline-block; }
-        .badge-ok { background-color: var(--status-ok-bg); color: var(--status-ok-text); }
-        .badge-plus { background-color: var(--status-plus-bg); color: var(--status-plus-text); }
-        .badge-minus { background-color: var(--status-minus-bg); color: var(--status-minus-text); }
-        .badge-count { background-color: #e0e7ff; color: #3730a3; } 
-
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; display: none; justify-content: center; align-items: center; }
-        .modal { background: white; width: 90%; max-width: 400px; border-radius: 8px; padding: 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-        .modal-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 15px; color: var(--secondary); }
-        .modal-label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px; }
-        .modal-input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border); border-radius: 4px; font-size: 1.1rem; }
-        .modal-actions { display: flex; gap: 10px; margin-top: 10px; }
-        .btn-cancel { background: #e5e7eb; color: #374151; flex: 1; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: 600; }
-        .btn-confirm { background: var(--primary); color: white; flex: 1; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: 600; }
-        .btn-confirm:disabled { background: #9ca3af; }
-
-        #reader { width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 10px; background: black; }
-        #reader video { object-fit: cover; }
-
+        #reader { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 10px; background: black; }
         .hidden { display: none !important; }
         .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; margin: 0 auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        footer { text-align: center; padding: 24px; color: var(--text-muted); font-size: 0.75rem; }
-        .header-right { display: flex; align-items: center; gap: 12px; }
     </style>
 </head>
 <body>
@@ -277,174 +170,138 @@
     </header>
 
     <div class="container">
-        <!-- Loading -->
+        <!-- Loading State -->
         <div id="loadingState" class="card hidden">
-            <div style="padding: 24px; text-align: center;">
+            <div style="padding: 30px; text-align: center;">
                 <div class="loading-spinner"></div>
-                <p style="margin-top: 10px; font-size: 0.9rem;" id="loadingText">Connecting...</p>
+                <p style="margin-top: 10px; font-weight: bold;" id="loadingText">Sinkronisasi Data...</p>
             </div>
         </div>
 
-        <!-- 1. HOME STATE -->
+        <!-- Home State -->
         <div id="homeState" class="card hidden">
             <div style="padding: 60px 20px; text-align: center;">
-                
-                <h3 style="margin-bottom: 40px; color: var(--secondary); font-size: 1.2rem;">Inventory Control<br>Distribution Center</h3>
+                <h3 style="margin-bottom: 40px; color: var(--secondary); font-size: 1.2rem; font-weight: 800;">Inventory Control System<br>Distribution Center</h3>
                 
                 <button id="btnStartScan" class="btn-scan">
-                    <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
                     SCAN QR RAK
                 </button>
                 
-                <p style="margin-top: 20px; color: var(--text-muted); font-size: 0.9rem;">
-                    Arahkan kamera ke label QR Code di rak<br>untuk membuka kartu stok.
-                </p>
+                <p style="margin-top: 20px; color: var(--text-muted); font-size: 0.9rem;">Scan label QR di rak untuk memuat kartu stok.</p>
 
-                <!-- RUNNING TEXT -->
                 <div class="running-text-container">
                     <div class="running-text">
-                        📢 SELAMAT DATANG DI APLIKASI DIGITAL STOCK CARD • Pastikan melakukan scan pada QR Code yang benar • Jaga kebersihan dan kerapian gudang • Laporkan jika ada selisih stok segera • Safety First!
+                        📢 DATA MIRROR AKTIF • Stok Unrestricted Terupdate • Pastikan Sloc Sesuai • Gunakan APD Lengkap • Safety First!
                     </div>
                 </div>
 
-                <!-- GLOBAL ALARM -->
+                <!-- ALARM MERAH (PENTING) -->
                 <div id="globalAlarm">
-                    <div>⚠️ PERHATIAN: Terdapat <span id="deviationCount">0</span> Item Selisih Stok!</div>
-                    <button id="btnShowDeviations" class="btn-alarm-detail">Lihat Detail</button>
+                    <div>🚨 PERHATIAN: Terdapat <span id="deviationCount">0</span> Item Selisih Stok!</div>
+                    <button id="btnShowDeviations" class="btn-alarm-detail">LIHAT DETAIL SELISIH</button>
                 </div>
-
             </div>
         </div>
 
-        <!-- 2. SELECT MATERIAL -->
+        <!-- Select Material State -->
         <div id="materialSelectState" class="card hidden">
             <div class="card-header">
-                <button class="btn-back" onclick="showHomeState()">← Scan Ulang</button>
-                <span class="card-title">Pilih Material</span>
+                <button onclick="showHomeState()" style="background:none; border:none; color:var(--primary); font-weight:bold; cursor:pointer;">← KEMBALI</button>
+                <span style="font-weight: 800; color: var(--secondary);">Pilih Material</span>
             </div>
-            <div style="padding: 20px;">
-                <p style="margin-bottom: 16px; color: var(--text-muted); font-size: 0.9rem; text-align: center;">
-                    Ditemukan <strong id="materialCount" style="color:var(--text-main)">0</strong> material di lokasi ini.
-                </p>
-                <div id="materialListContainer" class="material-list"></div>
-            </div>
+            <div id="materialListContainer" style="padding: 20px;"></div>
         </div>
 
-        <!-- 3. SINGLE CARD VIEW WRAPPER FOR PDF -->
-        <div id="pdfContainer">
-            <div id="singleCardState" class="hidden">
-                <div class="card">
-                    <div class="card-header">
-                        <button class="btn-back" onclick="showMaterialSelectState()" data-html2pdf-ignore="true">← List Material</button>
-                        <div class="header-right">
-                            <button class="btn-download" onclick="downloadPDF()" title="Download PDF" data-html2pdf-ignore="true">
-                                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                            </button>
-                            <span id="lastUpdated" style="font-size: 0.75rem; color: var(--text-muted);">Updated: --</span>
-                        </div>
-                    </div>
-                    
-                    <div class="item-hero">
-                        <div id="cardStatusBadge" style="margin-bottom:10px;"></div>
-                        <span class="hero-code" id="cardMaterial">MAT-0000</span>
-                        <div class="hero-desc" id="cardDesc">Description Here</div>
-                        <div class="hero-meta">
-                            MPN: <span id="cardMpn">-</span> | Bin: <span id="cardBin">-</span>
-                        </div>
-                    </div>
-
-                    <div class="stats-grid">
-                        <div class="stat-cell"><span class="stat-label">System (SOH)</span><span class="stat-value" id="cardSoh">0</span><span class="stat-sub" id="cardUom1">PCS</span></div>
-                        <div class="stat-cell"><span class="stat-label">Physical (Aktual)</span><span class="stat-value phys" id="cardPhysical">0</span><span class="stat-sub" id="cardUom2">PCS</span></div>
-                    </div>
-
-                    <ul class="detail-list">
-                        <li class="detail-item"><span class="detail-key">Ref No GR (Masuk)</span><span class="detail-val" id="cardNoGr">-</span></li>
-                        <li class="detail-item"><span class="detail-key">Ref No GI (Keluar)</span><span class="detail-val" id="cardNoGi">-</span></li>
-                        <li class="detail-item"><span class="detail-key">Total Masuk (In)</span><span class="detail-val" id="cardQtyIn">0</span></li>
-                        <li class="detail-item"><span class="detail-key">Total Keluar (Out)</span><span class="detail-val" id="cardQtyOut">0</span></li>
-                        <li class="detail-item"><span class="detail-key">PIC</span><span class="detail-val" id="cardPic">-</span></li>
-                        <li class="detail-item"><span class="detail-key" style="min-width: 80px;">Remark</span><span class="detail-val" id="cardRemark" style="font-size:0.8rem; font-style:italic;">-</span></li>
-                    </ul>
-
-                    <div class="action-bar" data-html2pdf-ignore="true">
-                        <button class="btn-action btn-in" onclick="openTransactionModal('IN')"><span style="font-size:1.2rem;">+</span> IN (GR)</button>
-                        <button class="btn-action btn-out" onclick="openTransactionModal('OUT')"><span style="font-size:1.2rem;">-</span> OUT (GI)</button>
-                        <button class="btn-action btn-count" onclick="openTransactionModal('COUNT')"><span style="font-size:1.2rem;">✓</span> Cek Fisik</button>
+        <!-- Single Card State -->
+        <div id="singleCardState" class="hidden">
+            <div class="card">
+                <div class="card-header">
+                    <button onclick="showMaterialSelectState()" style="background:none; border:none; color:var(--primary); font-weight:bold; cursor:pointer;">← LIST</button>
+                    <span style="font-size: 0.7rem; font-weight:800; color: var(--accent);">VALIDASI SLOC AKTIF</span>
+                </div>
+                
+                <div style="padding: 20px; text-align: center;">
+                    <div id="cardStatusBadge" style="margin-bottom:10px;"></div>
+                    <span id="cardMaterial" style="font-size: 1.4rem; font-weight: 800; color: var(--primary);">MAT-0000</span>
+                    <div id="cardDesc" style="font-size: 1rem; color: var(--text-main); font-weight: 600; margin: 5px 0;">Description</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); background: #f3f4f6; padding: 6px 12px; border-radius: 6px; display: inline-block; margin-top: 5px;">
+                        Bin: <span id="cardBin">-</span> | Sloc: <span id="cardSloc" style="font-weight:bold; color:var(--accent)">-</span>
                     </div>
                 </div>
 
-                <div class="card" style="margin-top: 15px;">
-                    <div class="card-header"><span class="card-title">Riwayat Transaksi (History)</span></div>
-                    <div class="table-responsive">
-                        <table class="stock-table">
-                            <thead><tr><th>Tanggal</th><th>Tipe</th><th>Ref No</th><th style="text-align: center;">Qty</th><th style="text-align: center;">Fisik</th><th>PIC</th></tr></thead>
-                            <tbody id="historyTableBody"><tr><td colspan="6" style="text-align:center; color:#9ca3af;">Memuat data...</td></tr></tbody>
-                        </table>
-                    </div>
+                <div class="stats-grid">
+                    <div class="stat-cell"><span class="stat-label">Sistem (SOH)</span><span class="stat-value" id="cardSoh">0</span></div>
+                    <div class="stat-cell"><span class="stat-label">Physical</span><span class="stat-value" id="cardPhysical" style="color:var(--primary)">0</span></div>
+                </div>
+
+                <ul class="detail-list" style="list-style:none;">
+                    <li class="detail-item"><span style="color:var(--text-muted); font-weight:600;">Part Number</span><span class="detail-val" id="cardMpn">-</span></li>
+                    <li class="detail-item"><span style="color:var(--text-muted); font-weight:600;">Base Unit</span><span class="detail-val" id="cardUom">-</span></li>
+                </ul>
+
+                <div class="action-bar">
+                    <button class="btn-action" style="background:var(--primary);" onclick="openTransactionModal('IN')">IN (+)</button>
+                    <button class="btn-action" style="background:var(--secondary);" onclick="openTransactionModal('OUT')">OUT (-)</button>
+                    <button class="btn-action" style="background:var(--accent);" onclick="openTransactionModal('COUNT')">CEK</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><span style="font-weight:800; font-size:0.8rem; color:var(--secondary);">HISTORY TRANSAKSI</span></div>
+                <div style="overflow-x: auto;">
+                    <table class="stock-table">
+                        <thead><tr><th>Tgl</th><th>Tipe</th><th>Ref</th><th>Qty</th><th>Bal</th></tr></thead>
+                        <tbody id="historyTableBody"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- MODALS -->
-    <div id="scannerModal" class="modal-overlay" style="align-items: flex-start; padding-top: 50px;">
-        <div class="modal" style="text-align: center; width: 95%; background: transparent; box-shadow: none;">
-            <h3 style="color: white; margin-bottom: 20px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">Arahkan ke QR Code</h3>
-            <div id="reader" style="width:100%; border: 2px solid white;"></div>
-            <button id="btnCloseScanner" class="btn-cancel" style="width:100%; margin-top:20px; background: white; color: black;">Tutup Kamera</button>
+    <!-- Modals -->
+    <div id="scannerModal" class="modal-overlay">
+        <div class="modal" style="background:transparent; text-align:center; box-shadow:none;">
+            <div id="reader" style="width:100%; border:4px solid white; border-radius:12px;"></div>
+            <button onclick="stopScanner()" style="margin-top:20px; padding:15px; border-radius:12px; border:none; background:white; font-weight:bold; color:red;">TUTUP</button>
         </div>
     </div>
 
     <div id="trxModal" class="modal-overlay">
         <div class="modal">
-            <h3 id="modalTitle" class="modal-title">Input Transaksi</h3>
-            <div style="background:#f3f4f6; padding:10px; border-radius:4px; margin-bottom:15px;">
-                <span class="modal-label">Material:</span>
-                <strong id="modalMaterialCode" style="color:var(--primary)">-</strong>
-                <div id="modalMaterialDesc" style="font-size:0.85rem; color:#4b5563; margin-top:2px;">-</div>
+            <h3 id="modalTitle" style="margin-bottom:15px; font-weight:800; color:var(--primary);">Transaksi</h3>
+            <div style="background:#f3f4f6; padding:12px; border-radius:8px; margin-bottom:15px; border-left: 4px solid var(--primary);">
+                <p id="modalMaterialCode" style="font-weight:800; color:var(--primary); font-size:1rem;"></p>
             </div>
-            
-            <label id="lblRefNo" class="modal-label">Nomor Referensi:</label>
-            <input type="text" id="modalRefNo" class="modal-input" placeholder="Contoh: 123456">
-            
-            <label class="modal-label">PIC (Petugas):</label>
-            <select id="modalPic" class="modal-input">
-                <option value="" disabled selected>Pilih Nama</option>
+            <label class="stat-label">Petugas (PIC):</label>
+            <select id="modalPic" class="modal-input" style="background:white;">
+                <option value="" disabled selected>Pilih Nama...</option>
                 <option value="Budi Sutrisno">Budi Sutrisno</option>
                 <option value="Ardy">Ardy</option>
                 <option value="Muhammad Itsnal">Muhammad Itsnal</option>
                 <option value="Fathikin">Fathikin</option>
                 <option value="Slamet Riyadi">Slamet Riyadi</option>
             </select>
-
-            <label id="lblQty" class="modal-label">Qty:</label>
-            <input type="number" id="modalQty" class="modal-input" placeholder="0" min="1">
-            <div id="modalHint" style="font-size:0.8rem; color:#ef4444; margin-bottom:10px;">*Qty Physical akan otomatis berubah.</div>
-            <div class="modal-actions">
-                <button id="btnCancelTrx" class="btn-cancel">Batal</button>
-                <button id="btnConfirmTrx" class="btn-confirm">Simpan</button>
+            <input type="text" id="modalRefNo" class="modal-input" placeholder="PO / Reservasi">
+            <input type="number" id="modalQty" class="modal-input" placeholder="0">
+            <div style="display:flex; gap:10px;">
+                <button onclick="closeModal()" style="flex:1; padding:15px; border-radius:10px; border:none; background:#f3f4f6; font-weight:800;">BATAL</button>
+                <button id="btnConfirmTrx" onclick="submitTransaction()" style="flex:1; padding:15px; border-radius:10px; border:none; background:var(--primary); color:white; font-weight:800;">SIMPAN</button>
             </div>
         </div>
     </div>
 
-    <!-- DEVIATION LIST MODAL -->
     <div id="deviationModal" class="modal-overlay">
         <div class="modal" style="width:95%; max-width:500px;">
-            <h3 class="modal-title" style="color:var(--danger)">Daftar Selisih Stok (Deviasi)</h3>
-            <div style="max-height: 300px; overflow-y: auto;">
+            <h3 style="color:var(--danger); margin-bottom:15px; font-weight:900;">🚨 DAFTAR SELISIH STOK</h3>
+            <div style="max-height: 350px; overflow-y: auto; border: 1px solid #fee2e2; border-radius: 8px;">
                 <table class="stock-table">
-                    <thead><tr><th>Bin</th><th>Material</th><th>Desc</th><th>Selisih</th></tr></thead>
+                    <thead><tr><th>Bin</th><th>Material</th><th>Sloc</th><th>Selisih</th></tr></thead>
                     <tbody id="deviationListBody"></tbody>
                 </table>
             </div>
-            <div class="modal-actions">
-                <button id="btnCloseDeviation" class="btn-cancel">Tutup</button>
-            </div>
+            <button onclick="document.getElementById('deviationModal').style.display='none'" style="width:100%; margin-top:15px; padding:15px; border:none; border-radius:10px; background:#f3f4f6; font-weight:bold;">TUTUP</button>
         </div>
     </div>
-
-    <footer><p>&copy; <span id="year"></span> Distribution Center System</p></footer>
 
     <script>
         const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbwzW5A58AyEb59xTX6jzJbknkhwXRr97F1wphvh-DghEyloCpa5kuqfcR_83TKCENc/exec"; 
@@ -454,156 +311,83 @@
         let currentBinCode = null;
         let currentTrxType = "OUT"; 
         let html5Qrcode = null; 
-        let isScannerRunning = false;
-        let globalDeviations = [];
 
         document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('year').textContent = new Date().getFullYear();
             document.getElementById('btnStartScan').addEventListener('click', startScanner);
-            document.getElementById('btnCloseScanner').addEventListener('click', stopScanner);
-            document.getElementById('btnCancelTrx').addEventListener('click', closeModal);
-            document.getElementById('btnConfirmTrx').addEventListener('click', submitTransaction);
-            document.getElementById('btnShowDeviations').addEventListener('click', showDeviationModal);
-            document.getElementById('btnCloseDeviation').addEventListener('click', () => {
-                document.getElementById('deviationModal').style.display = 'none';
+            document.getElementById('btnShowDeviations').addEventListener('click', () => {
+                document.getElementById('deviationModal').style.display = 'flex';
             });
-            
             checkGlobalStatus();
-
-            const urlParams = new URLSearchParams(window.location.search);
-            const binCode = urlParams.get('bin');
-            if (binCode) proceedToBin(binCode);
-            else showHomeState();
+            showHomeState();
         });
 
-        // --- GLOBAL ALARM ---
         async function checkGlobalStatus() {
+            if (API_ENDPOINT.includes("MASUKKAN_URL")) return;
             try {
-                const response = await fetch(`${API_ENDPOINT}?action=get_global_status`);
-                const data = await response.json();
+                const res = await fetch(`${API_ENDPOINT}?action=get_global_status`);
+                const data = await res.json();
                 const alarm = document.getElementById('globalAlarm');
-                
                 if (data.hasDeviation) {
                     document.getElementById('deviationCount').textContent = data.count;
                     alarm.style.display = 'flex';
-                    globalDeviations = data.items;
-                } else {
-                    alarm.style.display = 'none'; // Auto hide if resolved
-                }
-            } catch(e) {
-                console.log("Global check skipped/failed");
-            }
+                    const tbody = document.getElementById('deviationListBody');
+                    tbody.innerHTML = '';
+                    data.items.forEach(item => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td style="font-weight:bold;">${item.bin}</td><td>${item.material}</td><td>${item.sloc}</td><td style="color:red; font-weight:bold; text-align:center;">${item.diff}</td>`;
+                        tbody.appendChild(tr);
+                    });
+                } else { alarm.style.display = 'none'; }
+            } catch(e) { console.error("Alarm check failed"); }
         }
 
-        function showDeviationModal() {
-            const tbody = document.getElementById('deviationListBody');
-            tbody.innerHTML = '';
-            
-            globalDeviations.forEach(item => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${item.bin}</td>
-                    <td>${item.material}</td>
-                    <td style="font-size:0.8rem;">${item.desc.substring(0,20)}...</td>
-                    <td style="font-weight:bold; color:var(--danger);">${item.diff > 0 ? '+'+item.diff : item.diff}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-            
-            document.getElementById('deviationModal').style.display = 'flex';
-        }
-
-        // --- PDF ---
-        function downloadPDF() {
-            const element = document.getElementById('singleCardState');
-            const fileName = `StockCard_${selectedItem.material}_${new Date().toISOString().slice(0,10)}.pdf`;
-            const opt = { margin: 10, filename: fileName, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
-            html2pdf().set(opt).from(element).save();
-        }
-
-        // --- SCANNER ---
         function startScanner() {
             document.getElementById('scannerModal').style.display = 'flex';
             if (!html5Qrcode) html5Qrcode = new Html5Qrcode("reader");
-            if (isScannerRunning) return;
-            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-            html5Qrcode.start({ facingMode: "environment" }, config, onScanSuccess)
-            .then(() => isScannerRunning = true)
-            .catch(err => {
-                isScannerRunning = false;
-                alert("Gagal membuka kamera: " + err);
-                document.getElementById('scannerModal').style.display = 'none';
-            });
+            html5Qrcode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (decodedText) => {
+                stopScanner();
+                proceedToBin(decodedText);
+            }).catch(e => alert("Kamera error. Pastikan izin kamera diberikan."));
         }
 
         function stopScanner() {
-            if (html5Qrcode && isScannerRunning) {
+            if (html5Qrcode) {
                 html5Qrcode.stop().then(() => {
-                    isScannerRunning = false;
                     document.getElementById('scannerModal').style.display = 'none';
-                }).catch(err => {
-                    isScannerRunning = false;
-                    document.getElementById('scannerModal').style.display = 'none';
-                });
-            } else {
-                document.getElementById('scannerModal').style.display = 'none';
-            }
+                }).catch(() => { document.getElementById('scannerModal').style.display = 'none'; });
+            } else { document.getElementById('scannerModal').style.display = 'none'; }
         }
 
-        function onScanSuccess(decodedText) {
-            stopScanner();
-            proceedToBin(decodedText);
-        }
-
-        // --- MAIN LOGIC ---
         function proceedToBin(binCode) {
-            try {
-                const newUrl = `${window.location.pathname}?bin=${encodeURIComponent(binCode)}`;
-                window.history.pushState({path:newUrl},'',newUrl);
-            } catch(e){}
             currentBinCode = binCode;
             loadBinItems(binCode);
         }
 
         async function loadBinItems(binCode) {
-            showLoading(true, "Memuat Data...");
-            updateHeader(binCode);
+            showLoading(true, "Mencari BIN...");
+            document.getElementById('headerBinDisplay').textContent = `BIN : ${binCode.toUpperCase()}`;
             try {
-                const response = await fetch(`${API_ENDPOINT}?bin=${encodeURIComponent(binCode)}`);
-                const data = await response.json();
-                if (!data || data.length === 0) {
-                    alert(`Data tidak ditemukan untuk BIN: ${binCode}.`);
+                const res = await fetch(`${API_ENDPOINT}?bin=${encodeURIComponent(binCode)}`);
+                const data = await res.json();
+                if (data.length === 0) {
+                    alert("BIN tidak ditemukan.");
                     showHomeState();
                 } else {
                     binItemsCache = data;
                     renderMaterialList(data);
                     showMaterialSelectState();
                 }
-            } catch (err) {
-                alert("Gagal mengambil data: " + err.message);
-                showHomeState();
-            } finally {
-                showLoading(false);
-            }
+            } catch (err) { alert("Error koneksi."); showHomeState(); } finally { showLoading(false); }
         }
 
         function renderMaterialList(items) {
             const container = document.getElementById('materialListContainer');
-            document.getElementById('materialCount').textContent = items.length;
             container.innerHTML = '';
             items.forEach((item, index) => {
                 const div = document.createElement('div');
                 div.className = 'material-item';
-                div.innerHTML = `
-                    <div class="mat-info">
-                        <span class="mat-code">${item.material}</span>
-                        <div class="mat-desc">${item.desc}</div>
-                    </div>
-                    <button class="btn-preview" onclick="selectMaterialByIndex(${index})">
-                        Preview
-                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                    </button>
-                `;
+                div.innerHTML = `<div class="mat-info"><span class="mat-code">${item.material} <span class="mat-sloc-badge">${item.sloc}</span></span><div class="mat-desc">${item.desc}</div></div>
+                                 <button style="background:var(--primary); color:white; border:none; padding:10px 18px; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="selectMaterialByIndex(${index})">PREVIEW</button>`;
                 container.appendChild(div);
             });
         }
@@ -611,160 +395,86 @@
         function selectMaterialByIndex(index) {
             selectedItem = binItemsCache[index];
             renderSingleCard(selectedItem);
-            loadHistory(currentBinCode, selectedItem.material);
+            loadHistory();
         }
 
-        async function loadHistory(bin, material) {
+        async function loadHistory() {
             const tbody = document.getElementById('historyTableBody');
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Memuat riwayat...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Memuat...</td></tr>';
             try {
-                const url = `${API_ENDPOINT}?action=get_history&bin=${encodeURIComponent(bin)}&material=${encodeURIComponent(material)}`;
-                const response = await fetch(url);
-                const data = await response.json();
+                const res = await fetch(`${API_ENDPOINT}?action=get_history&bin=${encodeURIComponent(currentBinCode)}&material=${encodeURIComponent(selectedItem.material)}`);
+                const data = await res.json();
                 tbody.innerHTML = '';
-                if (!data || data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#9ca3af; padding:20px;">Belum ada riwayat.</td></tr>';
-                    return;
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999;">Belum ada riwayat.</td></tr>';
+                } else {
+                    data.forEach(row => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td>${row.date.split(' ')[0]}</td><td style="font-weight:bold;">${row.type.substring(0,3)}</td><td>${row.ref}</td><td style="font-weight:bold; text-align:center;">${row.qty}</td><td style="color:#666; text-align:center;">${row.balance}</td>`;
+                        tbody.appendChild(tr);
+                    });
                 }
-                data.forEach(row => {
-                    let typeBadge = '';
-                    if(row.type === 'GOODS RECEIPT') typeBadge = '<span class="status-badge badge-plus" style="font-size:0.7rem;">IN</span>';
-                    else if(row.type === 'GOODS ISSUE') typeBadge = '<span class="status-badge badge-minus" style="font-size:0.7rem;">OUT</span>';
-                    else if(row.type === 'CYCLE COUNT') typeBadge = '<span class="status-badge badge-count" style="font-size:0.7rem;">OPNAME</span>';
-                    
-                    let dateDisplay = row.date;
-                    try {
-                        const d = new Date(row.date);
-                        if (!isNaN(d)) dateDisplay = d.getDate().toString().padStart(2,'0') + '/' + (d.getMonth()+1).toString().padStart(2,'0') + ' ' + d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
-                    } catch(e){}
-
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `<td>${dateDisplay}</td><td>${typeBadge}</td><td style="font-size:0.8rem;">${row.ref}</td><td style="text-align: center; font-weight:bold;">${row.qty}</td><td style="text-align: center;">${row.balance}</td><td style="font-size:0.8rem;">${row.pic || '-'}</td>`;
-                    tbody.appendChild(tr);
-                });
-            } catch(err) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">Gagal memuat.</td></tr>'; }
+            } catch(e) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Gagal muat histori.</td></tr>'; }
         }
 
         function renderSingleCard(item) {
-            document.getElementById('homeState').classList.add('hidden');
             document.getElementById('materialSelectState').classList.add('hidden');
             document.getElementById('singleCardState').classList.remove('hidden');
-
-            const sys = parseFloat(item.soh) || 0;
-            const phys = parseFloat(item.physical) || 0;
-            const variance = phys - sys;
-
             document.getElementById('cardMaterial').textContent = item.material;
             document.getElementById('cardDesc').textContent = item.desc;
-            document.getElementById('cardMpn').textContent = item.mpn || '-';
             document.getElementById('cardBin').textContent = currentBinCode;
-            document.getElementById('cardSoh').textContent = sys;
-            document.getElementById('cardPhysical').textContent = phys;
-            document.getElementById('cardUom1').textContent = item.uom || 'Unit';
-            document.getElementById('cardUom2').textContent = item.uom || 'Unit';
-            document.getElementById('cardNoGr').textContent = item.no_gr || '-';
-            document.getElementById('cardNoGi').textContent = item.no_gi || '-';
-            document.getElementById('cardQtyIn').textContent = item.qty_in || '0';
-            document.getElementById('cardQtyOut').textContent = item.qty_out || '0';
-            document.getElementById('cardPic').textContent = item.pic || '-';
-            document.getElementById('cardRemark').textContent = item.remark || '-';
-            document.getElementById('lastUpdated').textContent = "Updated: " + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-
-            const badgeEl = document.getElementById('cardStatusBadge');
-            if (variance === 0) badgeEl.innerHTML = '<span class="status-badge badge-ok">MATCH (OK)</span>';
-            else if (variance > 0) badgeEl.innerHTML = '<span class="status-badge badge-plus">PLUS (+' + variance + ')</span>';
-            else badgeEl.innerHTML = '<span class="status-badge badge-minus">MINUS (' + variance + ')</span>';
+            document.getElementById('cardSoh').textContent = item.soh;
+            document.getElementById('cardPhysical').textContent = item.physical;
+            document.getElementById('cardSloc').textContent = item.sloc;
+            document.getElementById('cardMpn').textContent = item.mpn || '-';
+            document.getElementById('cardUom').textContent = item.uom || '-';
+            
+            const variance = (parseFloat(item.physical) || 0) - (parseFloat(item.soh) || 0);
+            const badge = document.getElementById('cardStatusBadge');
+            if (variance === 0) badge.innerHTML = '<span style="background:#d1fae5; color:#065f46; padding:6px 15px; border-radius:20px; font-weight:bold; font-size:0.75rem;">SINKRON (MATCH OK)</span>';
+            else badge.innerHTML = `<span style="background:#fee2e2; color:#b91c1c; padding:6px 15px; border-radius:20px; font-weight:bold; font-size:0.75rem;">ADA SELISIH (${variance})</span>`;
         }
 
-        window.openTransactionModal = function(type) {
-            if (!selectedItem) return;
+        function openTransactionModal(type) {
             currentTrxType = type;
-            const modalTitle = document.getElementById('modalTitle');
-            const lblRef = document.getElementById('lblRefNo');
-            const lblQty = document.getElementById('lblQty');
-            const hint = document.getElementById('modalHint');
-
-            if (type === "IN") {
-                modalTitle.textContent = "Input Penerimaan (GR)"; modalTitle.style.color = "var(--primary)";
-                lblRef.textContent = "Nomor GR (Dokumen Ref):"; lblQty.textContent = "Qty Masuk:";
-                hint.textContent = "*Stok Physical akan BERTAMBAH."; hint.style.color = "var(--primary)";
-            } else if (type === "OUT") {
-                modalTitle.textContent = "Input Pengeluaran (GI)"; modalTitle.style.color = "#991b1b"; 
-                lblRef.textContent = "Nomor GI (Dokumen Ref):"; lblQty.textContent = "Qty Keluar:";
-                hint.textContent = "*Stok Physical akan BERKURANG."; hint.style.color = "#ef4444";
-            } else if (type === "COUNT") {
-                modalTitle.textContent = "Input Hasil Cek Fisik"; modalTitle.style.color = "var(--accent)"; 
-                lblRef.textContent = "Nomor Referensi (Opsional):"; lblQty.textContent = "Hasil Hitung (Angka Aktual):";
-                hint.textContent = "*Stok Physical akan DI-RESET ke angka ini."; hint.style.color = "var(--accent)";
-            }
-
-            document.getElementById('modalMaterialCode').textContent = selectedItem.material;
-            document.getElementById('modalMaterialDesc').textContent = selectedItem.desc;
-            document.getElementById('modalRefNo').value = ''; document.getElementById('modalQty').value = ''; 
-            document.getElementById('modalPic').value = ''; // Reset PIC
-            document.getElementById('trxModal').style.display = 'flex'; document.getElementById('modalQty').focus();
+            document.getElementById('modalMaterialCode').textContent = `${selectedItem.material} (Sloc: ${selectedItem.sloc})`;
+            document.getElementById('trxModal').style.display = 'flex';
         }
 
         function closeModal() { document.getElementById('trxModal').style.display = 'none'; }
 
         async function submitTransaction() {
-            const refNo = document.getElementById('modalRefNo').value.trim();
-            const qty = parseInt(document.getElementById('modalQty').value);
-            const picName = document.getElementById('modalPic').value;
-
-            if (currentTrxType !== "COUNT" && !refNo) { alert("Nomor Referensi wajib diisi!"); return; }
-            if (isNaN(qty) || qty < 0) { alert("Masukkan jumlah Qty yang valid."); return; }
-            if (!picName) { alert("Silakan pilih Nama PIC!"); return; }
-
-            const btnConfirm = document.getElementById('btnConfirmTrx');
-            const originalText = btnConfirm.textContent;
-            btnConfirm.textContent = "Menyimpan..."; btnConfirm.disabled = true;
-
+            const qty = document.getElementById('modalQty').value;
+            const ref = document.getElementById('modalRefNo').value;
+            const pic = document.getElementById('modalPic').value;
+            if (!qty || !pic) return alert("PENTING: Jumlah (Qty) dan PIC wajib diisi!");
+            
+            const btn = document.getElementById('btnConfirmTrx');
+            const originalText = btn.textContent;
+            btn.disabled = true; btn.textContent = "MEMPROSES...";
             try {
-                const url = `${API_ENDPOINT}?action=update_stock&bin=${encodeURIComponent(currentBinCode)}&material=${encodeURIComponent(selectedItem.material)}&qty=${qty}&ref_no=${encodeURIComponent(refNo)}&trx_type=${currentTrxType}&pic=${encodeURIComponent(picName)}`;
+                // KIRIM DATA TERMASUK SLOC UNTUK VALIDASI
+                const url = `${API_ENDPOINT}?action=update_stock&bin=${encodeURIComponent(currentBinCode)}&material=${encodeURIComponent(selectedItem.material)}&sloc=${encodeURIComponent(selectedItem.sloc)}&qty=${qty}&ref_no=${encodeURIComponent(ref)}&trx_type=${currentTrxType}&pic=${encodeURIComponent(pic)}`;
                 const response = await fetch(url);
                 const result = await response.json();
-                
                 if (result.status === 'success') {
-                    // Alert removed - seamless update
                     closeModal();
+                    document.getElementById('modalQty').value = "";
+                    document.getElementById('modalRefNo').value = "";
                     await loadBinItems(currentBinCode);
-                    const updatedItem = binItemsCache.find(i => i.material === selectedItem.material);
-                    if (updatedItem) { selectedItem = updatedItem; renderSingleCard(selectedItem); }
-                    loadHistory(currentBinCode, selectedItem.material);
-                    checkGlobalStatus(); // Update global alarm real-time
-                } else { throw new Error(result.message || "Gagal menyimpan."); }
-            } catch (err) { alert("Error: " + err.message); } 
-            finally { btnConfirm.textContent = originalText; btnConfirm.disabled = false; }
+                    const updatedIdx = binItemsCache.findIndex(i => i.material === selectedItem.material && i.sloc === selectedItem.sloc);
+                    if (updatedIdx > -1) selectMaterialByIndex(updatedIdx);
+                    checkGlobalStatus();
+                } else { alert("Gagal: " + result.message); }
+            } catch (err) { alert("Error koneksi saat simpan data."); }
+            finally { btn.disabled = false; btn.textContent = originalText; }
         }
 
-        function updateHeader(bin) { document.getElementById('headerBinDisplay').textContent = bin ? `BIN : ${bin.toUpperCase()}` : 'SCAN QR'; }
-        
-        function showLoading(show, text) {
-            const loader = document.getElementById('loadingState');
-            if (text) document.getElementById('loadingText').textContent = text;
-            loader.classList.toggle('hidden', !show);
-            if (show) {
-                document.getElementById('homeState').classList.add('hidden');
-                document.getElementById('materialSelectState').classList.add('hidden');
-                document.getElementById('singleCardState').classList.add('hidden');
-            }
-        }
-
-        function showHomeState() {
-            document.getElementById('loadingState').classList.add('hidden');
-            document.getElementById('materialSelectState').classList.add('hidden');
-            document.getElementById('singleCardState').classList.add('hidden');
-            document.getElementById('homeState').classList.remove('hidden');
-            updateHeader('');
-        }
-
-        function showMaterialSelectState() {
-            document.getElementById('loadingState').classList.add('hidden');
-            document.getElementById('homeState').classList.add('hidden');
-            document.getElementById('singleCardState').classList.add('hidden');
-            document.getElementById('materialSelectState').classList.remove('hidden');
-        }
+        function showLoading(s, t) { document.getElementById('loadingState').classList.toggle('hidden', !s); document.getElementById('loadingText').textContent = t; }
+        function showHomeState() { hideAll(); document.getElementById('homeState').classList.remove('hidden'); updateHeader(''); }
+        function showMaterialSelectState() { hideAll(); document.getElementById('materialSelectState').classList.remove('hidden'); }
+        function hideAll() { ['homeState', 'materialSelectState', 'singleCardState', 'loadingState'].forEach(id => document.getElementById(id).classList.add('hidden')); }
+        function updateHeader(b) { document.getElementById('headerBinDisplay').textContent = b ? `BIN : ${b.toUpperCase()}` : 'READY'; }
     </script>
 </body>
 </html>
