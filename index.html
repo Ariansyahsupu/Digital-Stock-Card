@@ -31,6 +31,7 @@
         .card { background: var(--bg-card); border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 16px; overflow: hidden; border: 1px solid var(--border); }
         .card-header { padding: 16px; border-bottom: 1px solid var(--border); background-color: #f9fafb; display: flex; justify-content: space-between; align-items: center; }
 
+        /* ALARM GLOBAL - MERAH BERDENYUT */
         #globalAlarm {
             background-color: var(--warning-bg); border: 2px solid var(--danger); color: var(--danger);
             padding: 16px; border-radius: 12px; margin-top: 20px; text-align: center;
@@ -39,6 +40,7 @@
         }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
+        /* MARQUEE */
         .marquee-container { width: 100%; overflow: hidden; white-space: nowrap; background-color: #e0f2fe; color: #0369a1; padding: 8px 0; margin-top: 15px; border-radius: 4px; font-size: 0.9rem; }
         .marquee { display: inline-block; padding-left: 100%; animation: marquee 15s linear infinite; }
         @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
@@ -62,7 +64,7 @@
 
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; display: none; justify-content: center; align-items: center; }
         .modal { background: white; width: 90%; max-width: 400px; border-radius: 12px; padding: 25px; }
-        .modal-input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border); border-radius: 4px; font-size: 1.1rem; }
+        .modal-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid var(--border); border-radius: 6px; font-size: 1.1rem; }
 
         #reader { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 10px; background: black; }
         .hidden { display: none !important; }
@@ -78,16 +80,14 @@
     </header>
 
     <div class="container">
-        <div id="loadingState" class="card hidden">
-            <div style="padding: 30px; text-align: center;">Menyinkronkan...</div>
-        </div>
-
         <!-- Home State -->
         <div id="homeState" class="card">
             <div style="padding: 60px 20px; text-align: center;">
                 <h3 style="margin-bottom: 40px; color: var(--secondary); font-size: 1.2rem; font-weight: 800;">Inventory Control System<br>Distribution Center</h3>
                 <button id="btnStartScan" class="btn-scan">SCAN QR RAK</button>
-                <div class="marquee-container"><div class="marquee">📢 DATA MIRROR AKTIF • Stok Unrestricted MB52 PL28 Terupdate Otomatis • Safety First!</div></div>
+                <div class="marquee-container"><div class="marquee">📢 DATA MIRROR AKTIF • Stok Unrestricted MB52 PL28 Terupdate • Safety First!</div></div>
+                
+                <!-- ALARM GLOBAL -->
                 <div id="globalAlarm">
                     <div>🚨 PERHATIAN: Terdapat <span id="deviationCount">0</span> Item Selisih Stok!</div>
                     <button onclick="document.getElementById('deviationModal').style.display='flex'" style="background:var(--danger); color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:800; margin-top:10px;">LIHAT DETAIL SELISIH</button>
@@ -95,7 +95,7 @@
             </div>
         </div>
 
-        <!-- Material Select -->
+        <!-- Material Selection -->
         <div id="materialSelectState" class="card hidden">
             <div class="card-header">
                 <button onclick="showHomeState()" style="background:none; border:none; color:var(--primary); font-weight:bold; cursor:pointer;">← KEMBALI</button>
@@ -104,7 +104,7 @@
             <div id="materialListContainer" style="padding: 20px;"></div>
         </div>
 
-        <!-- Card View -->
+        <!-- Single Card -->
         <div id="singleCardState" class="hidden">
             <div class="card">
                 <div class="card-header">
@@ -130,19 +130,26 @@
                 </div>
             </div>
             <div class="card">
-                <div class="card-header"><span style="font-weight:800; font-size:0.8rem;">HISTORY TERAKHIR</span></div>
-                <div style="overflow-x: auto;"><table class="stock-table"><thead><tr><th>Tgl</th><th>Tipe</th><th>Ref</th><th>Qty</th><th>Bal</th></tr></thead><tbody id="historyTableBody"></tbody></table></div>
+                <div class="card-header"><span style="font-weight:800; font-size:0.8rem;">RIWAYAT TRANSAKSI</span></div>
+                <div style="overflow-x: auto;">
+                    <table class="stock-table">
+                        <thead><tr><th>Tgl</th><th>Tipe</th><th>Ref</th><th>Qty</th><th>Bal</th></tr></thead>
+                        <tbody id="historyTableBody"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Modals -->
-    <div id="scannerModal" class="modal-overlay"><div class="modal" style="background:transparent; text-align:center; box-shadow:none;"><div id="reader" style="width:100%; border:4px solid white; border-radius:12px;"></div><button onclick="stopScanner()" style="margin-top:20px; padding:15px; border-radius:12px; border:none; background:white; font-weight:bold; color:red;">TUTUP</button></div></div>
+    <div id="scannerModal" class="modal-overlay"><div class="modal" style="background:transparent; text-align:center; box-shadow:none;"><div id="reader" style="width:100%; border:4px solid white; border-radius:12px;"></div><button onclick="stopScanner()" style="margin-top:20px; padding:15px; border-radius:12px; border:none; background:white; font-weight:bold; color:red;">TUTUP KAMERA</button></div></div>
     <div id="trxModal" class="modal-overlay"><div class="modal"><h3 style="margin-bottom:15px; font-weight:800;">Transaksi</h3><div id="modalMaterialCode" style="background:#f3f4f6; padding:10px; border-radius:4px; margin-bottom:15px; font-weight:800; color:var(--primary);"></div><select id="modalPic" class="modal-input"><option value="" disabled selected>Pilih PIC</option><option value="Budi Sutrisno">Budi Sutrisno</option><option value="Ardy">Ardy</option><option value="Muhammad Itsnal">Muhammad Itsnal</option><option value="Fathikin">Fathikin</option><option value="Slamet Riyadi">Slamet Riyadi</option></select><input type="text" id="modalRefNo" class="modal-input" placeholder="Ref (PO/DN)"><input type="number" id="modalQty" class="modal-input" placeholder="Qty"><div style="display:flex; gap:10px;"><button onclick="closeModal()" style="flex:1; padding:15px; border-radius:10px; border:none; background:#f3f4f6; font-weight:800;">BATAL</button><button id="btnConfirmTrx" onclick="submitTransaction()" style="flex:1; padding:15px; border-radius:10px; border:none; background:var(--primary); color:white; font-weight:800;">SIMPAN</button></div></div></div>
     <div id="deviationModal" class="modal-overlay"><div class="modal" style="width:95%; max-width:500px;"><h3 style="color:var(--danger); margin-bottom:15px; font-weight:900;">🚨 DAFTAR SELISIH</h3><div style="max-height: 350px; overflow-y: auto;"><table class="stock-table"><thead><tr><th>Bin</th><th>Material</th><th>Sloc</th><th>Selisih</th></tr></thead><tbody id="deviationListBody"></tbody></table></div><button onclick="document.getElementById('deviationModal').style.display='none'" style="width:100%; margin-top:15px; padding:15px; border:none; border-radius:10px; background:#f3f4f6; font-weight:bold;">TUTUP</button></div></div>
 
     <script>
+        // MASUKKAN URL HASIL DEPLOY APPS SCRIPT DI SINI
         const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbwzW5A58AyEb59xTX6jzJbknkhwXRr97F1wphvh-DghEyloCpa5kuqfcR_83TKCENc/exec"; 
+        
         let binItemsCache = []; let selectedItem = null; let currentBinCode = null; let currentTrxType = "OUT"; let html5Qrcode = null; 
 
         document.getElementById('btnStartScan').addEventListener('click', startScanner);
@@ -161,7 +168,7 @@
                     tbody.innerHTML = '';
                     data.items.forEach(item => {
                         const tr = document.createElement('tr');
-                        tr.innerHTML = `<td style="font-weight:bold;">${item.bin}</td><td>${item.material}</td><td>${item.sloc}</td><td style="color:red; font-weight:bold; text-align:center;">${item.diff}</td>`;
+                        tr.innerHTML = `<td>${item.bin}</td><td>${item.material}</td><td>${item.sloc}</td><td style="color:red; font-weight:bold; text-align:center;">${item.diff}</td>`;
                         tbody.appendChild(tr);
                     });
                 } else { alarm.style.display = 'none'; }
@@ -179,7 +186,6 @@
         function stopScanner() { if (html5Qrcode) html5Qrcode.stop().then(() => { document.getElementById('scannerModal').style.display = 'none'; }); else document.getElementById('scannerModal').style.display = 'none'; }
 
         async function loadBinItems(binCode) {
-            document.getElementById('loadingState').classList.remove('hidden');
             currentBinCode = binCode;
             document.getElementById('headerBinDisplay').textContent = `BIN : ${binCode.toUpperCase()}`;
             try {
@@ -187,7 +193,7 @@
                 const data = await res.json();
                 if (data.length === 0) { alert("BIN tidak ditemukan."); showHomeState(); }
                 else { binItemsCache = data; renderMaterialList(data); showMaterialSelectState(); }
-            } catch (err) { alert("Koneksi gagal."); showHomeState(); } finally { document.getElementById('loadingState').classList.add('hidden'); }
+            } catch (err) { alert("Koneksi gagal."); showHomeState(); }
         }
 
         function renderMaterialList(items) {
@@ -214,11 +220,12 @@
                 const res = await fetch(`${API_ENDPOINT}?action=get_history&bin=${encodeURIComponent(currentBinCode)}&material=${encodeURIComponent(selectedItem.material)}`);
                 const data = await res.json();
                 tbody.innerHTML = '';
-                if (data.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999;">Belum ada riwayat.</td></tr>'; }
-                else {
+                if (!data || data.length === 0) { 
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999; padding: 20px;">Belum ada riwayat.</td></tr>'; 
+                } else {
                     data.forEach(row => {
                         const tr = document.createElement('tr');
-                        tr.innerHTML = `<td>${String(row.date)}</td><td style="font-weight:bold;">${String(row.type).substring(0,3)}</td><td>${row.ref}</td><td style="font-weight:bold; text-align:center;">${row.qty}</td><td style="color:#666; text-align:center;">${row.balance}</td>`;
+                        tr.innerHTML = `<td>${row.date || "-"}</td><td style="font-weight:bold;">${(row.type || "-").substring(0,3)}</td><td>${row.ref || "-"}</td><td style="font-weight:bold; text-align:center;">${row.qty || 0}</td><td style="color:#666; text-align:center;">${row.balance || 0}</td>`;
                         tbody.appendChild(tr);
                     });
                 }
