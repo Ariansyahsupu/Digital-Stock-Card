@@ -1,242 +1,306 @@
-/**
- * DIGITAL STOCK CARD - STABLE FINAL CONFIGURATION (V8.7 - FIXED HISTORICAL)
- * -----------------------------------------------------------
- * 1. Kunci Unik: Material + Storage Location (Sloc) + Bin.
- * 2. Format Sheet Historical (10 Kolom): 
- * Tanggal(0), Bin(1), Sloc(2), Material(3), Deskripsi(4), Tipe(5), Ref(6), Qty(7), Sisa(8), PIC(9).
- * 3. Fitur: Tampilkan semua tipe (IN, OUT, COUNT) secara real-time.
- * -----------------------------------------------------------
- */
-
-var GOOGLE_DRIVE_FOLDER_ID = "1XLEB6iUEksfpVUH2NjpacRrk0rw1ExbG"; 
-
-function doGet(e) {
-  var output = ContentService.createTextOutput();
-  var action = e.parameter.action;
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheets()[0]; 
-  var data = sheet.getDataRange().getValues();
-
-  // --- AKSI: CEK DEVIASI GLOBAL (ALARM) ---
-  if (action === 'get_global_status') {
-    var deviations = [];
-    if (data.length < 2) return output.setContent(JSON.stringify({ hasDeviation: false, count: 0, items: [] })).setMimeType(ContentService.MimeType.JSON);
-    for (var i = 1; i < data.length; i++) {
-      var soh = cleanNumber(data[i][10]);   
-      var phys = cleanNumber(data[i][11]); 
-      if (Math.abs(soh - phys) > 0.01) {
-        deviations.push({
-          bin: String(data[i][5] || "").toUpperCase().trim(),
-          material: String(data[i][0] || ""),
-          sloc: String(data[i][4] || ""),
-          diff: (phys - soh).toFixed(2)
-        });
-      }
-    }
-    return output.setContent(JSON.stringify({ hasDeviation: deviations.length > 0, count: deviations.length, items: deviations })).setMimeType(ContentService.MimeType.JSON);
-  }
-
-  // --- AKSI: UPDATE STOK ---
-  if (action === 'update_stock') {
-    var targetBin = String(e.parameter.bin || "").toUpperCase().trim();
-    var targetMaterial = String(e.parameter.material || "").trim();
-    var targetSloc = String(e.parameter.sloc || "").trim();
-    var qty = cleanNumber(e.parameter.qty);
-    var refNo = e.parameter.ref_no || "-"; 
-    var trxType = e.parameter.trx_type || "OUT"; 
-    var picName = e.parameter.pic || "-";
-    
-    var rowFound = -1;
-    for (var i = 1; i < data.length; i++) {
-      if (String(data[i][0]).trim() === targetMaterial && 
-          String(data[i][4]).trim() === targetSloc && 
-          String(data[i][5]).toUpperCase().trim() === targetBin) {
-        rowFound = i + 1; break; 
-      }
-    }
-
-    if (rowFound > -1) {
-      var currentSoh = cleanNumber(data[rowFound-1][10]);
-      var currentPhys = cleanNumber(data[rowFound-1][11]);
-      var newPhys = 0;
-      var formattedDate = Utilities.formatDate(new Date(), "Asia/Jakarta", "dd/MM/yyyy HH:mm");
-
-      if (trxType === "IN") {
-        sheet.getRange(rowFound, 9).setValue(cleanNumber(data[rowFound-1][8]) + qty); 
-        sheet.getRange(rowFound, 7).setValue(refNo); 
-        newPhys = currentPhys + qty;
-      } else if (trxType === "OUT") {
-        sheet.getRange(rowFound, 10).setValue(cleanNumber(data[rowFound-1][9]) + qty); 
-        sheet.getRange(rowFound, 8).setValue(refNo); 
-        newPhys = currentPhys - qty;
-      } else if (trxType === "COUNT") {
-        newPhys = qty;
-        var diff = newPhys - currentSoh;
-        sheet.getRange(rowFound, 13).setValue("Adjust: " + (diff >= 0 ? "+" : "") + diff + " (Opname)");
-      }
-
-      sheet.getRange(rowFound, 12).setValue(newPhys); 
-      sheet.getRange(rowFound, 14).setValue(picName); 
-      
-      // Simpan Ke Riwayat Historical sesuai urutan kolom Anda
-      recordHistory(ss, formattedDate, targetBin, targetSloc, targetMaterial, data[rowFound-1][1], trxType, refNo, qty, newPhys, picName);
-      updateDeviationSummary(ss); 
-      
-      SpreadsheetApp.flush(); // Paksa data tertulis instan
-      return output.setContent(JSON.stringify({status: 'success', message: 'Berhasil'})).setMimeType(ContentService.MimeType.JSON);
-    }
-    return output.setContent(JSON.stringify({status: 'error', message: 'Data tidak ditemukan'})).setMimeType(ContentService.MimeType.JSON);
-  }
-
-  // --- AKSI: BACA BIN ---
-  var binParam = e.parameter.bin;
-  if (binParam) {
-    var result = [];
-    var searchBin = String(binParam).toUpperCase().trim();
-    for (var i = 1; i < data.length; i++) {
-      if (String(data[i][5]).toUpperCase().trim() === searchBin) {
-        result.push({ material: data[i][0], desc: data[i][1], mpn: data[i][2], uom: data[i][3], sloc: data[i][4], soh: data[i][10], physical: data[i][11] });
-      }
-    }
-    return output.setContent(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
-  }
-
-  // --- AKSI: BACA RIWAYAT (DIPERBAIKI) ---
-  if (action === 'get_history') {
-    var tBin = String(e.parameter.bin || "").toUpperCase().trim();
-    var tMat = String(e.parameter.material || "").trim();
-    var tSloc = String(e.parameter.sloc || "").trim();
-    
-    var histSheet = ss.getSheetByName("Historical");
-    var history = [];
-    if (histSheet) {
-      var hData = histSheet.getDataRange().getValues();
-      for (var i = 1; i < hData.length; i++) {
-        // Filter berdasarkan Bin(1), Sloc(2), Material(3)
-        var matchBin = String(hData[i][1]).toUpperCase().trim() === tBin;
-        var matchSloc = String(hData[i][2]).trim() === tSloc;
-        var matchMat = String(hData[i][3]).trim() === tMat;
-
-        if (matchBin && matchSloc && matchMat) {
-          var dVal = hData[i][0];
-          var dStr = (dVal instanceof Date) ? Utilities.formatDate(dVal, "Asia/Jakarta", "dd/MM/yyyy") : String(dVal);
-          
-          history.push({
-            date: dStr, 
-            type: String(hData[i][5] || "-"), 
-            ref: String(hData[i][6] || "-"), 
-            qty: hData[i][7] || 0, 
-            balance: hData[i][8] || 0
-          });
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Stock Card | Distribution Center</title>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        :root {
+            /* Palette Emerald Corporate - LOCKED */
+            --primary: #064e3b;       
+            --secondary: #1f2937;     
+            --accent: #4f46e5;        
+            --danger: #ef4444;        
+            --warning-bg: #fee2e2;    
+            --bg-body: #f3f4f6;       
+            --bg-card: #ffffff;
+            --border: #e5e7eb;
+            --text-main: #111827;
+            --text-muted: #6b7280;
         }
-      }
-    }
-    return output.setContent(JSON.stringify(history.reverse().slice(0, 10))).setMimeType(ContentService.MimeType.JSON);
-  }
-  return output.setContent(JSON.stringify([])).setMimeType(ContentService.MimeType.JSON);
-}
 
-function recordHistory(ss, date, bin, sloc, material, desc, type, refNo, qty, balance, pic) {
-  var histSheet = ss.getSheetByName("Historical") || ss.insertSheet("Historical");
-  if (histSheet.getLastRow() === 0) {
-    histSheet.appendRow(["Tanggal", "Bin", "Sloc", "Material", "Deskripsi", "Tipe", "Ref", "Qty", "Sisa", "PIC"]);
-  }
-  // Sesuaikan urutan kolom: Tanggal(0), Bin(1), Sloc(2), Material(3), Deskripsi(4), Tipe(5), Ref(6), Qty(7), Sisa(8), PIC(9)
-  histSheet.appendRow([date, bin, sloc, material, desc, type, refNo, qty, balance, pic]);
-}
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-body); color: var(--text-main); padding-bottom: 60px; }
 
-function updateDeviationSummary(ss) {
-  var master = ss.getSheets()[0];
-  var rekap = ss.getSheetByName("REKAP_DEVIASI") || ss.insertSheet("REKAP_DEVIASI");
-  var mData = master.getDataRange().getValues();
-  var devs = [["TANGGAL UPDATE", "BIN", "SLOC", "MATERIAL", "DESKRIPSI", "SOH SAP", "FISIK", "SELISIH", "PIC"]];
-  var now = Utilities.formatDate(new Date(), "Asia/Jakarta", "dd/MM/yyyy HH:mm");
-  for (var i = 1; i < mData.length; i++) {
-    var diff = cleanNumber(mData[i][11]) - cleanNumber(mData[i][10]);
-    if (Math.abs(diff) > 0.01) devs.push([now, mData[i][5], mData[i][4], mData[i][0], mData[i][1], mData[i][10], mData[i][11], diff.toFixed(2), mData[i][13]]);
-  }
-  rekap.clearContents();
-  if (devs.length > 1) rekap.getRange(1, 1, devs.length, 9).setValues(devs).setFontWeight("bold");
-}
+        header { background-color: var(--primary); color: white; padding: 16px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header-content { max-width: 600px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+        .bin-indicator { background-color: rgba(255,255,255,0.15); padding: 4px 12px; border-radius: 4px; font-weight: 500; font-family: monospace; }
 
-function cleanNumber(val) {
-  if (val == null || val === "" || typeof val === 'undefined') return 0;
-  var str = String(val).trim().replace(/[^\d.,-]/g, "");
-  if (!str) return 0;
-  if (str.indexOf(',') > -1 && (str.indexOf('.') === -1 || str.lastIndexOf(',') > str.lastIndexOf('.'))) {
-     str = str.replace(/\./g, "").replace(",", ".");
-  } else { str = str.replace(/,/g, ""); }
-  return parseFloat(str) || 0;
-}
+        .container { max-width: 600px; margin: 0 auto; padding: 16px; }
+        .card { background: var(--bg-card); border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 16px; overflow: hidden; border: 1px solid var(--border); }
+        .card-header { padding: 16px; border-bottom: 1px solid var(--border); background-color: #f9fafb; display: flex; justify-content: space-between; align-items: center; }
 
-function syncCsvFromDrive() {
-  Logger.log("--- Sinkronisasi V8.7 Dimulai ---");
-  try {
-    var folder = DriveApp.getFolderById(GOOGLE_DRIVE_FOLDER_ID);
-    var files = folder.getFilesByType(MimeType.CSV);
-    var latestFile = null; var latestTime = 0;
-    while (files.hasNext()) {
-      var file = files.next();
-      if (file.getName().indexOf("MB52 PL28") > -1) {
-        if (file.getLastUpdated().getTime() > latestTime) { latestFile = file; latestTime = file.getLastUpdated().getTime(); }
-      }
-    }
-    if (!latestFile) return;
-    
-    var csvString = latestFile.getBlob().getDataAsString("UTF-8").replace(/^\uFEFF/, ''); 
-    var delimiter = (csvString.split(';').length > csvString.split(',').length) ? ';' : ',';
-    var csvData = Utilities.parseCsv(csvString, delimiter);
-    if (csvData.length < 2) return;
+        #globalAlarm {
+            background-color: var(--warning-bg); border: 2px solid var(--danger); color: var(--danger);
+            padding: 16px; border-radius: 12px; margin-top: 20px; text-align: center;
+            font-weight: 800; display: none; animation: pulse 1.5s infinite;
+            flex-direction: column; align-items: center; gap: 12px;
+        }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
-    var headers = csvData[0];
-    var idx = { mat: -1, desc: -1, mpn: -1, uom: -1, bin: -1, sloc: -1, soh: -1 };
-    for (var h = 0; h < headers.length; h++) {
-      var hl = headers[h].toLowerCase().trim().replace(/['"]+/g, '');
-      if (hl === "material" || hl === "matnr") idx.mat = h;
-      if (hl.indexOf("description") > -1 || hl === "maktx") idx.desc = h;
-      if (hl.indexOf("part number") > -1 || hl === "mpn") idx.mpn = h;
-      if (hl.indexOf("unit") > -1 || hl === "uom") idx.uom = h;
-      if (hl.indexOf("bin") > -1) idx.bin = h;
-      if (hl.indexOf("sloc") > -1 || hl.indexOf("storage location") > -1) idx.sloc = h;
-      if (hl.indexOf("unrestricted") > -1 && hl.indexOf("value") === -1 && hl.indexOf("transit") === -1) idx.soh = h;
-    }
-    
-    if (idx.mat === -1 || idx.sloc === -1 || idx.soh === -1) return;
+        .marquee-container { width: 100%; overflow: hidden; white-space: nowrap; background-color: #e0f2fe; color: #0369a1; padding: 8px 0; margin-top: 15px; border-radius: 4px; font-size: 0.9rem; }
+        .marquee { display: inline-block; padding-left: 100%; animation: marquee 15s linear infinite; }
+        @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
 
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheets()[0];
-    var sheetData = sheet.getDataRange().getValues();
-    var oldDataMap = {};
-    if (sheetData.length > 1) {
-      for (var j = 1; j < sheetData.length; j++) {
-        var key = String(sheetData[j][0]).trim() + "|" + String(sheetData[j][4]).trim() + "|" + String(sheetData[j][5]).trim();
-        oldDataMap[key] = { refGr: sheetData[j][6], refGi: sheetData[j][7], qIn: cleanNumber(sheetData[j][8]), qOut: cleanNumber(sheetData[j][9]), phys: sheetData[j][11] === "" ? -1 : cleanNumber(sheetData[j][11]), rem: sheetData[j][12], pic: sheetData[j][13] };
-      }
-    }
+        .btn-scan { width: 100%; padding: 30px; background-color: var(--secondary); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 1.2rem; }
 
-    var newRows = [];
-    newRows.push(["Material", "Deskripsi", "MPN", "Unit", "Storage Location", "Bin Location", "Ref GR", "Ref GI", "Qty In", "Qty Out", "SOH SAP", "Physical", "Remark", "PIC", "QR Code"]);
-    for (var i = 1; i < csvData.length; i++) {
-      var m = String(csvData[i][idx.mat] || "").replace(/['"]+/g, '').trim();
-      var s = String(csvData[i][idx.sloc] || "").replace(/['"]+/g, '').trim();
-      var b = String(csvData[i][idx.bin] || "").replace(/['"]+/g, '').toUpperCase().trim();
-      if (!m) continue;
-      var key = m + "|" + s + "|" + b;
-      var old = oldDataMap[key] || { refGr: "", refGi: "", qIn: 0, qOut: 0, phys: -1, rem: "", pic: "" };
-      var currentSoh = cleanNumber(csvData[i][idx.soh]);
-      var physToSet = old.phys === -1 ? currentSoh : old.phys;
-      var rNum = newRows.length + 1;
-      var qr = '=IMAGE("https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=" & ENCODEURL(F' + rNum + '))';
-      newRows.push([m, idx.desc > -1 ? csvData[i][idx.desc] : "", idx.mpn > -1 ? csvData[i][idx.mpn] : "", idx.uom > -1 ? csvData[i][idx.uom] : "", s, b, old.refGr, old.refGi, old.qIn, old.qOut, currentSoh, physToSet, old.rem, old.pic, qr]);
-    }
+        .material-item { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .mat-sloc-badge { font-size: 0.7rem; background: #eef2ff; color: var(--accent); padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px; }
 
-    if (newRows.length > 1) {
-      sheet.clearContents();
-      sheet.getRange(1, 1, newRows.length, 15).setValues(newRows);
-      sheet.getRange(1, 1, 1, 15).setFontWeight("bold").setBackground("#e2efda");
-      sheet.setFrozenRows(1);
-      updateDeviationSummary(ss);
-      Logger.log("SUKSES: " + (newRows.length - 1) + " baris disinkronkan.");
-    }
-  } catch (e) { Logger.log("Error: " + e.toString()); }
-}
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; background-color: var(--border); gap: 1px; border-bottom: 1px solid var(--border); }
+        .stat-cell { background-color: white; padding: 15px; text-align: center; }
+        .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; display: block; font-weight: 800; }
+        .stat-value { font-size: 1.6rem; font-weight: 800; color: var(--secondary); }
+
+        .action-bar { padding: 16px; background-color: #f9fafb; display: flex; gap: 10px; border-top: 1px solid var(--border); }
+        .btn-action { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; color: white; }
+
+        .stock-table { width: 100%; border-collapse: collapse; }
+        .stock-table th { text-align: left; padding: 12px 10px; background-color: #f9fafb; color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; border-bottom: 2px solid var(--border); }
+        .stock-table td { padding: 12px 10px; border-bottom: 1px solid #f3f4f6; font-size: 0.85rem; }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; display: none; justify-content: center; align-items: center; }
+        .modal { background: white; width: 95%; max-width: 400px; border-radius: 12px; padding: 25px; }
+        .modal-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid var(--border); border-radius: 6px; font-size: 1.1rem; }
+
+        #reader { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 10px; background: black; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-content">
+            <div class="brand"><h1>Digital Stock Card</h1></div>
+            <div class="bin-indicator" id="headerBinDisplay">READY</div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="loadingState" class="card hidden">
+            <div style="padding: 30px; text-align: center;">Syncing Data...</div>
+        </div>
+
+        <!-- Home State -->
+        <div id="homeState" class="card">
+            <div style="padding: 60px 20px; text-align: center;">
+                <h3 style="margin-bottom: 40px; color: var(--secondary); font-size: 1.2rem; font-weight: 800;">Inventory Control System<br>Distribution Center</h3>
+                <button id="btnStartScan" class="btn-scan">SCAN QR RAK</button>
+                <div class="marquee-container"><div class="marquee">📢 DATA MIRROR AKTIF • Stok Unrestricted MB52 PL28 Terupdate • Safety First!</div></div>
+                <div id="globalAlarm">
+                    <div>🚨 PERHATIAN: Terdapat <span id="deviationCount">0</span> Item Selisih Stok!</div>
+                    <button onclick="document.getElementById('deviationModal').style.display='flex'" style="background:var(--danger); color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:800; margin-top:10px;">LIHAT DETAIL SELISIH</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Material Selection -->
+        <div id="materialSelectState" class="card hidden">
+            <div class="card-header">
+                <button onclick="showHomeState()" style="background:none; border:none; color:var(--primary); font-weight:bold; cursor:pointer;">← KEMBALI</button>
+                <span style="font-weight: 800;">Pilih Material</span>
+            </div>
+            <div id="materialListContainer" style="padding: 20px;"></div>
+        </div>
+
+        <!-- Single Card -->
+        <div id="singleCardState" class="hidden">
+            <div class="card">
+                <div class="card-header">
+                    <button onclick="showMaterialSelectState()" style="background:none; border:none; color:var(--primary); font-weight:bold; cursor:pointer;">← LIST</button>
+                    <span style="font-size: 0.7rem; font-weight:800; color: var(--accent);">VALIDASI SLOC AKTIF</span>
+                </div>
+                <div style="padding: 20px; text-align: center;">
+                    <div id="cardStatusBadge" style="margin-bottom:10px;"></div>
+                    <span id="cardMaterial" style="font-size: 1.4rem; font-weight: 800; color: var(--primary);">MAT-0000</span>
+                    <div id="cardDesc" style="font-size: 1rem; font-weight: 600;">Description</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); background: #f3f4f6; padding: 6px 12px; border-radius: 6px; display: inline-block; margin-top: 10px;">
+                        Bin: <span id="cardBin">-</span> | Sloc: <span id="cardSloc" style="font-weight:bold; color:var(--accent)">-</span>
+                    </div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-cell"><span class="stat-label">System (SOH)</span><span class="stat-value" id="cardSoh">0</span></div>
+                    <div class="stat-cell"><span class="stat-label">Physical</span><span class="stat-value" id="cardPhysical" style="color:var(--primary)">0</span></div>
+                </div>
+                <div class="action-bar">
+                    <button class="btn-action" style="background:var(--primary);" onclick="openTransactionModal('IN')">IN (+)</button>
+                    <button class="btn-action" style="background:var(--secondary);" onclick="openTransactionModal('OUT')">OUT (-)</button>
+                    <button class="btn-action" style="background:var(--accent);" onclick="openTransactionModal('COUNT')">CEK</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><span style="font-weight:800; font-size:0.8rem; color:var(--secondary);">RIWAYAT TRANSAKSI TERAKHIR</span></div>
+                <div style="overflow-x: auto;">
+                    <table class="stock-table">
+                        <thead><tr><th>Tgl</th><th>Tipe</th><th>Ref</th><th style="text-align:center;">Qty</th><th style="text-align:center;">Sisa</th></tr></thead>
+                        <tbody id="historyTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="scannerModal" class="modal-overlay"><div class="modal" style="background:transparent; text-align:center; box-shadow:none;"><div id="reader" style="width:100%; border:4px solid white; border-radius:12px;"></div><button onclick="stopScanner()" style="margin-top:20px; padding:15px; border-radius:12px; border:none; background:white; font-weight:bold; color:red;">TUTUP</button></div></div>
+    <div id="trxModal" class="modal-overlay"><div class="modal"><h3 style="margin-bottom:15px; font-weight:800;">Transaksi</h3><div id="modalMaterialCode" style="background:#f3f4f6; padding:10px; border-radius:4px; margin-bottom:15px; font-weight:800; color:var(--primary);"></div><select id="modalPic" class="modal-input"><option value="" disabled selected>Pilih PIC</option><option value="Budi Sutrisno">Budi Sutrisno</option><option value="Ardy">Ardy</option><option value="Muhammad Itsnal">Muhammad Itsnal</option><option value="Fathikin">Fathikin</option><option value="Slamet Riyadi">Slamet Riyadi</option></select><input type="text" id="modalRefNo" class="modal-input" placeholder="Ref (PO/DN)"><input type="number" id="modalQty" class="modal-input" placeholder="Qty"><div style="display:flex; gap:10px;"><button onclick="closeModal()" style="flex:1; padding:15px; border-radius:10px; border:none; background:#f3f4f6; font-weight:800;">BATAL</button><button id="btnConfirmTrx" onclick="submitTransaction()" style="flex:1; padding:15px; border-radius:10px; border:none; background:var(--primary); color:white; font-weight:800;">SIMPAN</button></div></div></div>
+    <div id="deviationModal" class="modal-overlay"><div class="modal" style="width:95%; max-width:500px;"><h3 style="color:var(--danger); margin-bottom:15px; font-weight:900;">🚨 DAFTAR SELISIH</h3><div style="max-height: 350px; overflow-y: auto; border: 1px solid #fee2e2; border-radius: 8px;"><table class="stock-table"><thead><tr><th>Bin</th><th>Material</th><th>Sloc</th><th>Selisih</th></tr></thead><tbody id="deviationListBody"></tbody></table></div><button onclick="document.getElementById('deviationModal').style.display='none'" style="width:100%; margin-top:15px; padding:15px; border:none; border-radius:10px; background:#f3f4f6; font-weight:bold;">TUTUP</button></div></div>
+
+    <script>
+        const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbwzW5A58AyEb59xTX6jzJbknkhwXRr97F1wphvh-DghEyloCpa5kuqfcR_83TKCENc/exec"; 
+        let binItemsCache = []; let selectedItem = null; let currentBinCode = null; let currentTrxType = "OUT"; let html5Qrcode = null; 
+
+        document.getElementById('btnStartScan').addEventListener('click', startScanner);
+        checkGlobalStatus();
+
+        async function checkGlobalStatus() {
+            if (!API_ENDPOINT || API_ENDPOINT.includes("MASUKKAN_URL")) return;
+            try {
+                const res = await fetch(`${API_ENDPOINT}?action=get_global_status&_=${Date.now()}`);
+                const data = await res.json();
+                const alarm = document.getElementById('globalAlarm');
+                if (data.hasDeviation) {
+                    document.getElementById('deviationCount').textContent = data.count;
+                    alarm.style.display = 'flex';
+                    const tbody = document.getElementById('deviationListBody');
+                    tbody.innerHTML = '';
+                    data.items.forEach(item => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td>${item.bin}</td><td>${item.material}</td><td>${item.sloc}</td><td style="color:red; font-weight:bold; text-align:center;">${item.diff}</td>`;
+                        tbody.appendChild(tr);
+                    });
+                } else { alarm.style.display = 'none'; }
+            } catch(e) {}
+        }
+
+        function startScanner() {
+            document.getElementById('scannerModal').style.display = 'flex';
+            if (!html5Qrcode) html5Qrcode = new Html5Qrcode("reader");
+            html5Qrcode.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (decodedText) => {
+                stopScanner(); loadBinItems(decodedText);
+            }).catch(e => {
+                alert("Kamera error. Pastikan link HTTPS.");
+                document.getElementById('scannerModal').style.display = 'none';
+            });
+        }
+
+        function stopScanner() { if (html5Qrcode && html5Qrcode.isScanning) { html5Qrcode.stop().then(() => { document.getElementById('scannerModal').style.display = 'none'; }); } else { document.getElementById('scannerModal').style.display = 'none'; } }
+
+        async function loadBinItems(binCode) {
+            document.getElementById('loadingState').classList.remove('hidden');
+            currentBinCode = binCode;
+            document.getElementById('headerBinDisplay').textContent = `BIN : ${binCode.toUpperCase()}`;
+            try {
+                const res = await fetch(`${API_ENDPOINT}?bin=${encodeURIComponent(binCode)}&_=${Date.now()}`);
+                const data = await res.json();
+                if (data.length === 0) { alert("BIN tidak ditemukan."); showHomeState(); }
+                else { binItemsCache = data; renderMaterialList(data); showMaterialSelectState(); }
+            } catch (err) { alert("Koneksi gagal."); showHomeState(); } finally { document.getElementById('loadingState').classList.add('hidden'); }
+        }
+
+        function renderMaterialList(items) {
+            const container = document.getElementById('materialListContainer');
+            container.innerHTML = '';
+            items.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'material-item';
+                div.innerHTML = `<div style="flex:1;"><span style="font-weight:bold; color:var(--primary);">${item.material} <span class="mat-sloc-badge">${item.sloc}</span></span><div style="font-size:0.85rem; color:var(--text-muted);">${item.desc}</div></div><button style="background:var(--primary); color:white; border:none; padding:10px 18px; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="selectMaterialByIndex(${index})">PREVIEW</button>`;
+                container.appendChild(div);
+            });
+        }
+
+        function selectMaterialByIndex(index) {
+            selectedItem = binItemsCache[index];
+            renderSingleCard(selectedItem);
+            loadHistory();
+        }
+
+        async function loadHistory() {
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Memuat riwayat...</td></tr>';
+            try {
+                // FIX: Penambahan parameter sloc dan bypass cache
+                const url = `${API_ENDPOINT}?action=get_history&bin=${encodeURIComponent(currentBinCode)}&material=${encodeURIComponent(selectedItem.material)}&sloc=${encodeURIComponent(selectedItem.sloc)}&_=${Date.now()}`;
+                const res = await fetch(url);
+                const data = await res.json();
+                tbody.innerHTML = '';
+                if (!data || data.length === 0) { 
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999; padding: 20px;">Belum ada riwayat.</td></tr>'; 
+                } else {
+                    data.forEach(row => {
+                        const tr = document.createElement('tr');
+                        // Ubah Tipe COUNT jadi ADJ agar jelas di mata user
+                        let typeLabel = String(row.type).substring(0,3);
+                        if (row.type === "COUNT") typeLabel = "ADJ";
+                        
+                        tr.innerHTML = `<td>${row.date || "-"}</td><td style="font-weight:bold;">${typeLabel}</td><td>${row.ref || "-"}</td><td style="font-weight:bold; text-align:center;">${row.qty || 0}</td><td style="color:#666; text-align:center;">${row.balance || 0}</td>`;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch(e) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Gagal memproses riwayat.</td></tr>'; }
+        }
+
+        function renderSingleCard(item) {
+            document.getElementById('materialSelectState').classList.add('hidden');
+            document.getElementById('singleCardState').classList.remove('hidden');
+            document.getElementById('cardMaterial').textContent = item.material;
+            document.getElementById('cardDesc').textContent = item.desc;
+            document.getElementById('cardBin').textContent = currentBinCode;
+            document.getElementById('cardSoh').textContent = item.soh;
+            document.getElementById('cardPhysical').textContent = item.physical;
+            document.getElementById('cardSloc').textContent = item.sloc;
+            const variance = (parseFloat(item.physical) || 0) - (parseFloat(item.soh) || 0);
+            const badge = document.getElementById('cardStatusBadge');
+            if (variance === 0) badge.innerHTML = '<span style="background:#d1fae5; color:#065f46; padding:6px 15px; border-radius:20px; font-weight:bold; font-size:0.75rem;">SINKRON OK</span>';
+            else badge.innerHTML = `<span style="background:#fee2e2; color:#b91c1c; padding:6px 15px; border-radius:20px; font-weight:bold; font-size:0.75rem;">ADA SELISIH (${variance.toFixed(2)})</span>`;
+        }
+
+        function openTransactionModal(type) {
+            currentTrxType = type;
+            document.getElementById('modalMaterialCode').textContent = `${selectedItem.material} (Sloc: ${selectedItem.sloc})`;
+            document.getElementById('trxModal').style.display = 'flex';
+        }
+
+        function closeModal() { document.getElementById('trxModal').style.display = 'none'; }
+
+        async function submitTransaction() {
+            const qty = document.getElementById('modalQty').value;
+            const ref = document.getElementById('modalRefNo').value;
+            const pic = document.getElementById('modalPic').value;
+            if (!qty || !pic) return alert("PIC & Qty wajib!");
+            const btn = document.getElementById('btnConfirmTrx');
+            btn.disabled = true; btn.textContent = "MEMPROSES...";
+            try {
+                const url = `${API_ENDPOINT}?action=update_stock&bin=${encodeURIComponent(currentBinCode)}&material=${encodeURIComponent(selectedItem.material)}&sloc=${encodeURIComponent(selectedItem.sloc)}&qty=${qty}&ref_no=${encodeURIComponent(ref)}&trx_type=${currentTrxType}&pic=${encodeURIComponent(pic)}`;
+                const response = await fetch(url);
+                const result = await response.json();
+                if (result.status === 'success') {
+                    closeModal(); 
+                    document.getElementById('modalQty').value = "";
+                    document.getElementById('modalRefNo').value = "";
+                    // Refresh data bin dan riwayat secara instan
+                    await loadBinItems(currentBinCode); 
+                    const updatedIdx = binItemsCache.findIndex(i => i.material === selectedItem.material && i.sloc === selectedItem.sloc);
+                    if (updatedIdx > -1) {
+                        selectedItem = binItemsCache[updatedIdx];
+                        renderSingleCard(selectedItem);
+                    }
+                    await loadHistory(); // PENTING: Refresh tabel riwayat setelah simpan
+                    checkGlobalStatus();
+                } else { alert("Gagal: " + result.message); }
+            } catch (err) { alert("Error koneksi."); }
+            finally { btn.disabled = false; btn.textContent = "SIMPAN"; }
+        }
+
+        function showHomeState() { 
+            ['materialSelectState','singleCardState','loadingState'].forEach(id => document.getElementById(id).classList.add('hidden')); 
+            document.getElementById('homeState').classList.remove('hidden'); 
+            checkGlobalStatus(); 
+        }
+        function showMaterialSelectState() { 
+            ['homeState','singleCardState'].forEach(id => document.getElementById(id).classList.add('hidden')); 
+            document.getElementById('materialSelectState').classList.remove('hidden'); 
+        }
+    </script>
+</body>
+</html>
