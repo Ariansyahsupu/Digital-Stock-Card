@@ -197,7 +197,7 @@
     </div>
 
     <script>
-        // PENTING: Ganti dengan URL Deployment Apps Script Anda yang terakhir
+        // MASUKKAN URL HASIL DEPLOY APPS SCRIPT ANDA DI SINI
         const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbwzW5A58AyEb59xTX6jzJbknkhwXRr97F1wphvh-DghEyloCpa5kuqfcR_83TKCENc/exec"; 
         
         let binItemsCache = []; let selectedItem = null; let currentBinCode = null; let currentTrxType = "OUT"; let html5Qrcode = null; 
@@ -227,35 +227,42 @@
             } catch(e) {}
         }
 
-        // PERBAIKAN SCANNER: Langsung mengaktifkan tanpa menu konfirmasi tambahan
+        // PERBAIKAN SCANNER: Mengakses kamera secara langsung tanpa delay perizinan internal tambahan
         function startScanner() {
             document.getElementById('scannerModal').style.display = 'flex';
+            
+            // Inisialisasi ulang jika sudah ada scanner sebelumnya agar tidak tersangkut
+            if (html5Qrcode && html5Qrcode.isScanning) {
+                html5Qrcode.stop().then(() => startActualCamera()).catch(() => startActualCamera());
+            } else {
+                startActualCamera();
+            }
+        }
+
+        function startActualCamera() {
             if (!html5Qrcode) html5Qrcode = new Html5Qrcode("reader");
             
-            // Konfigurasi langsung ke kamera belakang (environment)
-            const config = { fps: 15, qrbox: { width: 250, height: 250 } };
-            
-            html5Qrcode.start({ facingMode: "environment" }, config, (decodedText) => {
-                stopScanner(); 
-                loadBinItems(decodedText);
-            }).catch(e => {
-                console.error(e);
-                alert("Gagal mengakses kamera. Pastikan izin telah diberikan.");
+            // Menuju kamera belakang secara agresif
+            html5Qrcode.start(
+                { facingMode: "environment" }, 
+                { fps: 15, qrbox: { width: 250, height: 250 } },
+                (decodedText) => {
+                    stopScanner(); 
+                    loadBinItems(decodedText);
+                }
+            ).catch(e => {
+                console.error("Gagal start kamera:", e);
+                // Jika error karena izin, informasikan satu kali secara sistem.
+                // Kami tidak bisa menghilangkan izin browser Google/Apple, namun kami menjamin
+                // ini adalah jalur tercepat yang diizinkan oleh sistem operasi HP.
                 document.getElementById('scannerModal').style.display = 'none';
             });
         }
 
         function stopScanner() {
             if (html5Qrcode && html5Qrcode.isScanning) {
-                html5Qrcode.stop().then(() => {
-                    document.getElementById('scannerModal').style.display = 'none';
-                }).catch(err => {
-                    console.error("Stop error", err);
-                    document.getElementById('scannerModal').style.display = 'none';
-                });
-            } else {
-                document.getElementById('scannerModal').style.display = 'none';
-            }
+                html5Qrcode.stop().then(() => { document.getElementById('scannerModal').style.display = 'none'; });
+            } else { document.getElementById('scannerModal').style.display = 'none'; }
         }
 
         async function loadBinItems(binCode) {
