@@ -78,10 +78,6 @@
     </header>
 
     <div class="container">
-        <div id="loadingState" class="card hidden">
-            <div style="padding: 30px; text-align: center;">Syncing Data...</div>
-        </div>
-
         <!-- Home State -->
         <div id="homeState" class="card">
             <div style="padding: 60px 20px; text-align: center;">
@@ -95,16 +91,16 @@
             </div>
         </div>
 
-        <!-- Material Selection -->
+        <!-- Material Select State -->
         <div id="materialSelectState" class="card hidden">
             <div class="card-header">
                 <button onclick="showHomeState()" style="background:none; border:none; color:var(--primary); font-weight:bold; cursor:pointer;">← KEMBALI</button>
-                <span style="font-weight: 800;">Pilih Material</span>
+                <span style="font-weight: 800; color: var(--secondary);">Pilih Material</span>
             </div>
             <div id="materialListContainer" style="padding: 20px;"></div>
         </div>
 
-        <!-- Single Card -->
+        <!-- Single Card State -->
         <div id="singleCardState" class="hidden">
             <div class="card">
                 <div class="card-header">
@@ -114,7 +110,7 @@
                 <div style="padding: 20px; text-align: center;">
                     <div id="cardStatusBadge" style="margin-bottom:10px;"></div>
                     <span id="cardMaterial" style="font-size: 1.4rem; font-weight: 800; color: var(--primary);">MAT-0000</span>
-                    <div id="cardDesc" style="font-size: 1rem; font-weight: 600;">Description</div>
+                    <div id="cardDesc" style="font-size: 1rem; color: var(--text-main); font-weight: 600; margin: 5px 0;">Description</div>
                     <div style="font-size: 0.8rem; color: var(--text-muted); background: #f3f4f6; padding: 6px 12px; border-radius: 6px; display: inline-block; margin-top: 10px;">
                         Bin: <span id="cardBin">-</span> | Sloc: <span id="cardSloc" style="font-weight:bold; color:var(--accent)">-</span>
                     </div>
@@ -147,7 +143,9 @@
     <div id="deviationModal" class="modal-overlay"><div class="modal" style="width:95%; max-width:500px;"><h3 style="color:var(--danger); margin-bottom:15px; font-weight:900;">🚨 DAFTAR SELISIH</h3><div style="max-height: 350px; overflow-y: auto; border: 1px solid #fee2e2; border-radius: 8px;"><table class="stock-table"><thead><tr><th>Bin</th><th>Material</th><th>Sloc</th><th>Selisih</th></tr></thead><tbody id="deviationListBody"></tbody></table></div><button onclick="document.getElementById('deviationModal').style.display='none'" style="width:100%; margin-top:15px; padding:15px; border:none; border-radius:10px; background:#f3f4f6; font-weight:bold;">TUTUP</button></div></div>
 
     <script>
+        // PENTING: GANTI DENGAN URL DEPLOYMENT APPS SCRIPT ANDA
         const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbwzW5A58AyEb59xTX6jzJbknkhwXRr97F1wphvh-DghEyloCpa5kuqfcR_83TKCENc/exec"; 
+        
         let binItemsCache = []; let selectedItem = null; let currentBinCode = null; let currentTrxType = "OUT"; let html5Qrcode = null; 
 
         document.getElementById('btnStartScan').addEventListener('click', startScanner);
@@ -179,7 +177,7 @@
             html5Qrcode.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (decodedText) => {
                 stopScanner(); loadBinItems(decodedText);
             }).catch(e => {
-                alert("Kamera error. Pastikan link HTTPS.");
+                alert("Gagal buka kamera. Pastikan link HTTPS.");
                 document.getElementById('scannerModal').style.display = 'none';
             });
         }
@@ -187,7 +185,6 @@
         function stopScanner() { if (html5Qrcode && html5Qrcode.isScanning) { html5Qrcode.stop().then(() => { document.getElementById('scannerModal').style.display = 'none'; }); } else { document.getElementById('scannerModal').style.display = 'none'; } }
 
         async function loadBinItems(binCode) {
-            document.getElementById('loadingState').classList.remove('hidden');
             currentBinCode = binCode;
             document.getElementById('headerBinDisplay').textContent = `BIN : ${binCode.toUpperCase()}`;
             try {
@@ -195,7 +192,7 @@
                 const data = await res.json();
                 if (data.length === 0) { alert("BIN tidak ditemukan."); showHomeState(); }
                 else { binItemsCache = data; renderMaterialList(data); showMaterialSelectState(); }
-            } catch (err) { alert("Koneksi gagal."); showHomeState(); } finally { document.getElementById('loadingState').classList.add('hidden'); }
+            } catch (err) { alert("Koneksi gagal."); showHomeState(); }
         }
 
         function renderMaterialList(items) {
@@ -219,7 +216,7 @@
             const tbody = document.getElementById('historyTableBody');
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Memuat riwayat...</td></tr>';
             try {
-                // FIX: Penambahan parameter sloc dan bypass cache
+                // PARAMETER SLOC DAN MATERIAL LENGKAP
                 const url = `${API_ENDPOINT}?action=get_history&bin=${encodeURIComponent(currentBinCode)}&material=${encodeURIComponent(selectedItem.material)}&sloc=${encodeURIComponent(selectedItem.sloc)}&_=${Date.now()}`;
                 const res = await fetch(url);
                 const data = await res.json();
@@ -229,8 +226,7 @@
                 } else {
                     data.forEach(row => {
                         const tr = document.createElement('tr');
-                        // Ubah Tipe COUNT jadi ADJ agar jelas di mata user
-                        let typeLabel = String(row.type).substring(0,3);
+                        let typeLabel = String(row.type).substring(0,3).toUpperCase();
                         if (row.type === "COUNT") typeLabel = "ADJ";
                         
                         tr.innerHTML = `<td>${row.date || "-"}</td><td style="font-weight:bold;">${typeLabel}</td><td>${row.ref || "-"}</td><td style="font-weight:bold; text-align:center;">${row.qty || 0}</td><td style="color:#666; text-align:center;">${row.balance || 0}</td>`;
@@ -251,7 +247,7 @@
             document.getElementById('cardSloc').textContent = item.sloc;
             const variance = (parseFloat(item.physical) || 0) - (parseFloat(item.soh) || 0);
             const badge = document.getElementById('cardStatusBadge');
-            if (variance === 0) badge.innerHTML = '<span style="background:#d1fae5; color:#065f46; padding:6px 15px; border-radius:20px; font-weight:bold; font-size:0.75rem;">SINKRON OK</span>';
+            if (Math.abs(variance) < 0.01) badge.innerHTML = '<span style="background:#d1fae5; color:#065f46; padding:6px 15px; border-radius:20px; font-weight:bold; font-size:0.75rem;">SINKRON OK</span>';
             else badge.innerHTML = `<span style="background:#fee2e2; color:#b91c1c; padding:6px 15px; border-radius:20px; font-weight:bold; font-size:0.75rem;">ADA SELISIH (${variance.toFixed(2)})</span>`;
         }
 
@@ -278,14 +274,13 @@
                     closeModal(); 
                     document.getElementById('modalQty').value = "";
                     document.getElementById('modalRefNo').value = "";
-                    // Refresh data bin dan riwayat secara instan
                     await loadBinItems(currentBinCode); 
                     const updatedIdx = binItemsCache.findIndex(i => i.material === selectedItem.material && i.sloc === selectedItem.sloc);
                     if (updatedIdx > -1) {
                         selectedItem = binItemsCache[updatedIdx];
                         renderSingleCard(selectedItem);
                     }
-                    await loadHistory(); // PENTING: Refresh tabel riwayat setelah simpan
+                    await loadHistory(); 
                     checkGlobalStatus();
                 } else { alert("Gagal: " + result.message); }
             } catch (err) { alert("Error koneksi."); }
@@ -293,7 +288,7 @@
         }
 
         function showHomeState() { 
-            ['materialSelectState','singleCardState','loadingState'].forEach(id => document.getElementById(id).classList.add('hidden')); 
+            ['materialSelectState','singleCardState'].forEach(id => document.getElementById(id).classList.add('hidden')); 
             document.getElementById('homeState').classList.remove('hidden'); 
             checkGlobalStatus(); 
         }
