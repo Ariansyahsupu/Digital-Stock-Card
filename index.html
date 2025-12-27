@@ -23,6 +23,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-body); color: var(--text-main); padding-bottom: 60px; }
 
+        /* HEADER */
         header { background-color: var(--primary); color: white; padding: 16px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .header-content { max-width: 600px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
         .bin-indicator { background-color: rgba(255,255,255,0.15); padding: 4px 12px; border-radius: 4px; font-weight: 500; font-family: monospace; }
@@ -80,13 +81,23 @@
     </header>
 
     <div class="container">
+        <div id="loadingState" class="card hidden">
+            <div style="padding: 30px; text-align: center;">Sinkronisasi Data...</div>
+        </div>
+
         <!-- Home State -->
         <div id="homeState" class="card">
             <div style="padding: 60px 20px; text-align: center;">
                 <h3 style="margin-bottom: 40px; color: var(--secondary); font-size: 1.2rem; font-weight: 800;">Inventory Control System<br>Distribution Center</h3>
-                <button id="btnStartScan" class="btn-scan">SCAN QR RAK</button>
-                <div class="marquee-container"><div class="marquee">📢 DATA MIRROR AKTIF • Stok Unrestricted MB52 PL28 Terupdate • Safety First!</div></div>
                 
+                <button id="btnStartScan" class="btn-scan">SCAN QR RAK</button>
+                
+                <p style="margin-top: 20px; color: var(--text-muted); font-size: 0.9rem;">Scan label QR di rak untuk memuat kartu stok.</p>
+
+                <div class="marquee-container">
+                    <div class="marquee">📢 DATA MIRROR AKTIF • Stok Unrestricted MB52 PL28 Terupdate Otomatis • Safety First!</div>
+                </div>
+
                 <!-- ALARM GLOBAL -->
                 <div id="globalAlarm">
                     <div>🚨 PERHATIAN: Terdapat <span id="deviationCount">0</span> Item Selisih Stok!</div>
@@ -99,7 +110,7 @@
         <div id="materialSelectState" class="card hidden">
             <div class="card-header">
                 <button onclick="showHomeState()" style="background:none; border:none; color:var(--primary); font-weight:bold; cursor:pointer;">← KEMBALI</button>
-                <span style="font-weight: 800;">Pilih Material</span>
+                <span style="font-weight: 800; color: var(--secondary);">Pilih Material</span>
             </div>
             <div id="materialListContainer" style="padding: 20px;"></div>
         </div>
@@ -111,26 +122,30 @@
                     <button onclick="showMaterialSelectState()" style="background:none; border:none; color:var(--primary); font-weight:bold; cursor:pointer;">← LIST</button>
                     <span style="font-size: 0.7rem; font-weight:800; color: var(--accent);">VALIDASI SLOC AKTIF</span>
                 </div>
+                
                 <div style="padding: 20px; text-align: center;">
                     <div id="cardStatusBadge" style="margin-bottom:10px;"></div>
                     <span id="cardMaterial" style="font-size: 1.4rem; font-weight: 800; color: var(--primary);">MAT-0000</span>
-                    <div id="cardDesc" style="font-size: 1rem; font-weight: 600;">Description</div>
+                    <div id="cardDesc" style="font-size: 1rem; color: var(--text-main); font-weight: 600; margin: 5px 0;">Description</div>
                     <div style="font-size: 0.8rem; color: var(--text-muted); background: #f3f4f6; padding: 6px 12px; border-radius: 6px; display: inline-block; margin-top: 10px;">
                         Bin: <span id="cardBin">-</span> | Sloc: <span id="cardSloc" style="font-weight:bold; color:var(--accent)">-</span>
                     </div>
                 </div>
+
                 <div class="stats-grid">
                     <div class="stat-cell"><span class="stat-label">System (SOH)</span><span class="stat-value" id="cardSoh">0</span></div>
                     <div class="stat-cell"><span class="stat-label">Physical</span><span class="stat-value" id="cardPhysical" style="color:var(--primary)">0</span></div>
                 </div>
+
                 <div class="action-bar">
                     <button class="btn-action" style="background:var(--primary);" onclick="openTransactionModal('IN')">IN (+)</button>
                     <button class="btn-action" style="background:var(--secondary);" onclick="openTransactionModal('OUT')">OUT (-)</button>
                     <button class="btn-action" style="background:var(--accent);" onclick="openTransactionModal('COUNT')">CEK</button>
                 </div>
             </div>
+
             <div class="card">
-                <div class="card-header"><span style="font-weight:800; font-size:0.8rem;">RIWAYAT TRANSAKSI</span></div>
+                <div class="card-header"><span style="font-weight:800; font-size:0.8rem; color:var(--secondary);">RIWAYAT TRANSAKSI TERBARU</span></div>
                 <div style="overflow-x: auto;">
                     <table class="stock-table">
                         <thead><tr><th>Tgl</th><th>Tipe</th><th>Ref</th><th>Qty</th><th>Bal</th></tr></thead>
@@ -141,19 +156,56 @@
         </div>
     </div>
 
-    <!-- Modals -->
-    <div id="scannerModal" class="modal-overlay"><div class="modal" style="background:transparent; text-align:center; box-shadow:none;"><div id="reader" style="width:100%; border:4px solid white; border-radius:12px;"></div><button onclick="stopScanner()" style="margin-top:20px; padding:15px; border-radius:12px; border:none; background:white; font-weight:bold; color:red;">TUTUP KAMERA</button></div></div>
-    <div id="trxModal" class="modal-overlay"><div class="modal"><h3 style="margin-bottom:15px; font-weight:800;">Transaksi</h3><div id="modalMaterialCode" style="background:#f3f4f6; padding:10px; border-radius:4px; margin-bottom:15px; font-weight:800; color:var(--primary);"></div><select id="modalPic" class="modal-input"><option value="" disabled selected>Pilih PIC</option><option value="Budi Sutrisno">Budi Sutrisno</option><option value="Ardy">Ardy</option><option value="Muhammad Itsnal">Muhammad Itsnal</option><option value="Fathikin">Fathikin</option><option value="Slamet Riyadi">Slamet Riyadi</option></select><input type="text" id="modalRefNo" class="modal-input" placeholder="Ref (PO/DN)"><input type="number" id="modalQty" class="modal-input" placeholder="Qty"><div style="display:flex; gap:10px;"><button onclick="closeModal()" style="flex:1; padding:15px; border-radius:10px; border:none; background:#f3f4f6; font-weight:800;">BATAL</button><button id="btnConfirmTrx" onclick="submitTransaction()" style="flex:1; padding:15px; border-radius:10px; border:none; background:var(--primary); color:white; font-weight:800;">SIMPAN</button></div></div></div>
-    <div id="deviationModal" class="modal-overlay"><div class="modal" style="width:95%; max-width:500px;"><h3 style="color:var(--danger); margin-bottom:15px; font-weight:900;">🚨 DAFTAR SELISIH</h3><div style="max-height: 350px; overflow-y: auto;"><table class="stock-table"><thead><tr><th>Bin</th><th>Material</th><th>Sloc</th><th>Selisih</th></tr></thead><tbody id="deviationListBody"></tbody></table></div><button onclick="document.getElementById('deviationModal').style.display='none'" style="width:100%; margin-top:15px; padding:15px; border:none; border-radius:10px; background:#f3f4f6; font-weight:bold;">TUTUP</button></div></div>
+    <!-- MODAL SCANNER -->
+    <div id="scannerModal" class="modal-overlay">
+        <div class="modal" style="background:transparent; text-align:center; box-shadow:none;">
+            <div id="reader" style="width:100%; border:4px solid white; border-radius:12px;"></div>
+            <button onclick="stopScanner()" style="margin-top:20px; padding:15px; border-radius:12px; border:none; background:white; font-weight:bold; color:red;">TUTUP KAMERA</button>
+        </div>
+    </div>
+
+    <!-- MODAL TRANSAKSI -->
+    <div id="trxModal" class="modal-overlay">
+        <div class="modal">
+            <h3 style="margin-bottom:15px; font-weight:800; color:var(--primary);">Transaksi</h3>
+            <div id="modalMaterialCode" style="background:#f3f4f6; padding:12px; border-radius:8px; margin-bottom:15px; font-weight:800; color:var(--primary); border-left:4px solid var(--primary);"></div>
+            <select id="modalPic" class="modal-input" style="background:white;">
+                <option value="" disabled selected>Pilih PIC...</option>
+                <option value="Budi Sutrisno">Budi Sutrisno</option><option value="Ardy">Ardy</option><option value="Muhammad Itsnal">Muhammad Itsnal</option><option value="Fathikin">Fathikin</option><option value="Slamet Riyadi">Slamet Riyadi</option>
+            </select>
+            <input type="text" id="modalRefNo" class="modal-input" placeholder="No. Referensi (PO/DN)">
+            <input type="number" id="modalQty" class="modal-input" placeholder="Masukkan Qty">
+            <div style="display:flex; gap:10px;">
+                <button onclick="closeModal()" style="flex:1; padding:15px; border-radius:10px; border:none; background:#f3f4f6; font-weight:800;">BATAL</button>
+                <button id="btnConfirmTrx" onclick="submitTransaction()" style="flex:1; padding:15px; border-radius:10px; border:none; background:var(--primary); color:white; font-weight:800;">SIMPAN</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DEVIASI -->
+    <div id="deviationModal" class="modal-overlay">
+        <div class="modal" style="width:95%; max-width:500px;">
+            <h3 style="color:var(--danger); margin-bottom:15px; font-weight:900;">🚨 DAFTAR SELISIH STOK</h3>
+            <div style="max-height: 350px; overflow-y: auto; border: 1px solid #fee2e2; border-radius: 8px;">
+                <table class="stock-table">
+                    <thead><tr><th>Bin</th><th>Material</th><th>Sloc</th><th>Selisih</th></tr></thead>
+                    <tbody id="deviationListBody"></tbody>
+                </table>
+            </div>
+            <button onclick="document.getElementById('deviationModal').style.display='none'" style="width:100%; margin-top:15px; padding:15px; border:none; border-radius:10px; background:#f3f4f6; font-weight:bold;">TUTUP</button>
+        </div>
+    </div>
 
     <script>
-        // MASUKKAN URL HASIL DEPLOY APPS SCRIPT DI SINI
+        // PENTING: Ganti dengan URL Deployment Apps Script Anda yang terakhir
         const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbwzW5A58AyEb59xTX6jzJbknkhwXRr97F1wphvh-DghEyloCpa5kuqfcR_83TKCENc/exec"; 
         
         let binItemsCache = []; let selectedItem = null; let currentBinCode = null; let currentTrxType = "OUT"; let html5Qrcode = null; 
 
-        document.getElementById('btnStartScan').addEventListener('click', startScanner);
-        checkGlobalStatus();
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('btnStartScan').addEventListener('click', startScanner);
+            checkGlobalStatus();
+        });
 
         async function checkGlobalStatus() {
             if (!API_ENDPOINT || API_ENDPOINT.includes("MASUKKAN_URL")) return;
@@ -168,24 +220,46 @@
                     tbody.innerHTML = '';
                     data.items.forEach(item => {
                         const tr = document.createElement('tr');
-                        tr.innerHTML = `<td>${item.bin}</td><td>${item.material}</td><td>${item.sloc}</td><td style="color:red; font-weight:bold; text-align:center;">${item.diff}</td>`;
+                        tr.innerHTML = `<td style="font-weight:bold;">${item.bin}</td><td>${item.material}</td><td>${item.sloc}</td><td style="color:red; font-weight:bold; text-align:center;">${item.diff}</td>`;
                         tbody.appendChild(tr);
                     });
                 } else { alarm.style.display = 'none'; }
             } catch(e) {}
         }
 
+        // PERBAIKAN SCANNER: Langsung mengaktifkan tanpa menu konfirmasi tambahan
         function startScanner() {
             document.getElementById('scannerModal').style.display = 'flex';
             if (!html5Qrcode) html5Qrcode = new Html5Qrcode("reader");
-            html5Qrcode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (decodedText) => {
-                stopScanner(); loadBinItems(decodedText);
-            }).catch(e => alert("Kamera error."));
+            
+            // Konfigurasi langsung ke kamera belakang (environment)
+            const config = { fps: 15, qrbox: { width: 250, height: 250 } };
+            
+            html5Qrcode.start({ facingMode: "environment" }, config, (decodedText) => {
+                stopScanner(); 
+                loadBinItems(decodedText);
+            }).catch(e => {
+                console.error(e);
+                alert("Gagal mengakses kamera. Pastikan izin telah diberikan.");
+                document.getElementById('scannerModal').style.display = 'none';
+            });
         }
 
-        function stopScanner() { if (html5Qrcode) html5Qrcode.stop().then(() => { document.getElementById('scannerModal').style.display = 'none'; }); else document.getElementById('scannerModal').style.display = 'none'; }
+        function stopScanner() {
+            if (html5Qrcode && html5Qrcode.isScanning) {
+                html5Qrcode.stop().then(() => {
+                    document.getElementById('scannerModal').style.display = 'none';
+                }).catch(err => {
+                    console.error("Stop error", err);
+                    document.getElementById('scannerModal').style.display = 'none';
+                });
+            } else {
+                document.getElementById('scannerModal').style.display = 'none';
+            }
+        }
 
         async function loadBinItems(binCode) {
+            document.getElementById('loadingState').classList.remove('hidden');
             currentBinCode = binCode;
             document.getElementById('headerBinDisplay').textContent = `BIN : ${binCode.toUpperCase()}`;
             try {
@@ -193,7 +267,7 @@
                 const data = await res.json();
                 if (data.length === 0) { alert("BIN tidak ditemukan."); showHomeState(); }
                 else { binItemsCache = data; renderMaterialList(data); showMaterialSelectState(); }
-            } catch (err) { alert("Koneksi gagal."); showHomeState(); }
+            } catch (err) { alert("Koneksi gagal."); showHomeState(); } finally { document.getElementById('loadingState').classList.add('hidden'); }
         }
 
         function renderMaterialList(items) {
@@ -267,14 +341,18 @@
                 const response = await fetch(url);
                 const result = await response.json();
                 if (result.status === 'success') {
-                    closeModal(); loadBinItems(currentBinCode); checkGlobalStatus();
+                    closeModal(); 
+                    document.getElementById('modalQty').value = "";
+                    document.getElementById('modalRefNo').value = "";
+                    loadBinItems(currentBinCode); 
+                    checkGlobalStatus();
                 } else { alert("Gagal: " + result.message); }
             } catch (err) { alert("Error koneksi."); }
             finally { btn.disabled = false; btn.textContent = "SIMPAN"; }
         }
 
         function showHomeState() { 
-            ['materialSelectState','singleCardState'].forEach(id => document.getElementById(id).classList.add('hidden')); 
+            ['materialSelectState','singleCardState','loadingState'].forEach(id => document.getElementById(id).classList.add('hidden')); 
             document.getElementById('homeState').classList.remove('hidden'); 
             checkGlobalStatus(); 
         }
