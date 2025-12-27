@@ -7,7 +7,7 @@
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
         :root {
-            /* Palette Emerald Corporate - Locked */
+            /* Palette Emerald Corporate - Tetap & Konsisten */
             --primary: #064e3b;       
             --secondary: #1f2937;     
             --accent: #4f46e5;        
@@ -23,6 +23,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-body); color: var(--text-main); padding-bottom: 60px; }
 
+        /* HEADER */
         header { background-color: var(--primary); color: white; padding: 16px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .header-content { max-width: 600px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
         .bin-indicator { background-color: rgba(255,255,255,0.15); padding: 4px 12px; border-radius: 4px; font-weight: 500; font-family: monospace; }
@@ -31,6 +32,7 @@
         .card { background: var(--bg-card); border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 16px; overflow: hidden; border: 1px solid var(--border); }
         .card-header { padding: 16px; border-bottom: 1px solid var(--border); background-color: #f9fafb; display: flex; justify-content: space-between; align-items: center; }
 
+        /* ALARM GLOBAL */
         #globalAlarm {
             background-color: var(--warning-bg); border: 2px solid var(--danger); color: var(--danger);
             padding: 16px; border-radius: 12px; margin-top: 20px; text-align: center;
@@ -66,6 +68,8 @@
 
         #reader { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 10px; background: black; }
         .hidden { display: none !important; }
+        .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -79,7 +83,10 @@
 
     <div class="container">
         <div id="loadingState" class="card hidden">
-            <div style="padding: 30px; text-align: center;">Menyegarkan Data...</div>
+            <div style="padding: 30px; text-align: center;">
+                <div class="loading-spinner"></div>
+                <p style="margin-top: 10px; font-weight: bold;">Syncing...</p>
+            </div>
         </div>
 
         <!-- Home State -->
@@ -99,7 +106,7 @@
         <div id="materialSelectState" class="card hidden">
             <div class="card-header">
                 <button onclick="showHomeState()" style="background:none; border:none; color:var(--primary); font-weight:bold; cursor:pointer;">← KEMBALI</button>
-                <span style="font-weight: 800;">Pilih Material</span>
+                <span style="font-weight: 800; color: var(--secondary);">Pilih Material</span>
             </div>
             <div id="materialListContainer" style="padding: 20px;"></div>
         </div>
@@ -114,7 +121,7 @@
                 <div style="padding: 20px; text-align: center;">
                     <div id="cardStatusBadge" style="margin-bottom:10px;"></div>
                     <span id="cardMaterial" style="font-size: 1.4rem; font-weight: 800; color: var(--primary);">MAT-0000</span>
-                    <div id="cardDesc" style="font-size: 1rem; font-weight: 600;">Description</div>
+                    <div id="cardDesc" style="font-size: 1rem; color: var(--text-main); font-weight: 600; margin: 5px 0;">Description</div>
                     <div style="font-size: 0.8rem; color: var(--text-muted); background: #f3f4f6; padding: 6px 12px; border-radius: 6px; display: inline-block; margin-top: 10px;">
                         Bin: <span id="cardBin">-</span> | Sloc: <span id="cardSloc" style="font-weight:bold; color:var(--accent)">-</span>
                     </div>
@@ -142,12 +149,19 @@
     </div>
 
     <!-- Modals -->
-    <div id="scannerModal" class="modal-overlay"><div class="modal" style="background:transparent; text-align:center; box-shadow:none;"><div id="reader" style="width:100%; border:4px solid white; border-radius:12px;"></div><button onclick="stopScanner()" style="margin-top:20px; padding:15px; border-radius:12px; border:none; background:white; font-weight:bold; color:red;">TUTUP KAMERA</button></div></div>
-    <div id="trxModal" class="modal-overlay"><div class="modal"><h3 style="margin-bottom:15px; font-weight:800; color:var(--primary);">Transaksi</h3><div id="modalMaterialCode" style="background:#f3f4f6; padding:10px; border-radius:4px; margin-bottom:15px; font-weight:800; color:var(--primary);"></div><select id="modalPic" class="modal-input"><option value="" disabled selected>Pilih PIC</option><option value="Budi Sutrisno">Budi Sutrisno</option><option value="Ardy">Ardy</option><option value="Muhammad Itsnal">Muhammad Itsnal</option><option value="Fathikin">Fathikin</option><option value="Slamet Riyadi">Slamet Riyadi</option></select><input type="text" id="modalRefNo" class="modal-input" placeholder="Ref (PO/DN)"><input type="number" id="modalQty" class="modal-input" placeholder="Qty"><div style="display:flex; gap:10px;"><button onclick="closeModal()" style="flex:1; padding:15px; border-radius:10px; border:none; background:#f3f4f6; font-weight:800;">BATAL</button><button id="btnConfirmTrx" onclick="submitTransaction()" style="flex:1; padding:15px; border-radius:10px; border:none; background:var(--primary); color:white; font-weight:800;">SIMPAN</button></div></div></div>
+    <div id="scannerModal" class="modal-overlay">
+        <div class="modal" style="background:transparent; text-align:center; box-shadow:none;">
+            <div id="reader" style="width:100%; border:4px solid white; border-radius:12px;"></div>
+            <button onclick="stopScanner()" style="margin-top:20px; padding:15px; border-radius:12px; border:none; background:white; font-weight:bold; color:red;">TUTUP KAMERA</button>
+        </div>
+    </div>
+
+    <div id="trxModal" class="modal-overlay"><div class="modal"><h3 style="margin-bottom:15px; font-weight:800; color:var(--primary);">Transaksi</h3><div id="modalMaterialCode" style="background:#f3f4f6; padding:12px; border-radius:8px; margin-bottom:15px; font-weight:800; color:var(--primary); border-left:4px solid var(--primary);"></div><select id="modalPic" class="modal-input" style="background:white;"><option value="" disabled selected>Pilih PIC...</option><option value="Budi Sutrisno">Budi Sutrisno</option><option value="Ardy">Ardy</option><option value="Muhammad Itsnal">Muhammad Itsnal</option><option value="Fathikin">Fathikin</option><option value="Slamet Riyadi">Slamet Riyadi</option></select><input type="text" id="modalRefNo" class="modal-input" placeholder="Ref (PO/DN)"><input type="number" id="modalQty" class="modal-input" placeholder="Qty"><div style="display:flex; gap:10px;"><button onclick="closeModal()" style="flex:1; padding:15px; border-radius:10px; border:none; background:#f3f4f6; font-weight:800;">BATAL</button><button id="btnConfirmTrx" onclick="submitTransaction()" style="flex:1; padding:15px; border-radius:10px; border:none; background:var(--primary); color:white; font-weight:800;">SIMPAN</button></div></div></div>
     <div id="deviationModal" class="modal-overlay"><div class="modal" style="width:95%; max-width:500px;"><h3 style="color:var(--danger); margin-bottom:15px; font-weight:900;">🚨 DAFTAR SELISIH</h3><div style="max-height: 350px; overflow-y: auto; border: 1px solid #fee2e2; border-radius: 8px;"><table class="stock-table"><thead><tr><th>Bin</th><th>Material</th><th>Sloc</th><th>Selisih</th></tr></thead><tbody id="deviationListBody"></tbody></table></div><button onclick="document.getElementById('deviationModal').style.display='none'" style="width:100%; margin-top:15px; padding:15px; border:none; border-radius:10px; background:#f3f4f6; font-weight:bold;">TUTUP</button></div></div>
 
     <script>
         const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbwzW5A58AyEb59xTX6jzJbknkhwXRr97F1wphvh-DghEyloCpa5kuqfcR_83TKCENc/exec"; 
+        
         let binItemsCache = []; let selectedItem = null; let currentBinCode = null; let currentTrxType = "OUT"; let html5Qrcode = null; 
 
         document.getElementById('btnStartScan').addEventListener('click', startScanner);
@@ -179,7 +193,7 @@
             html5Qrcode.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (decodedText) => {
                 stopScanner(); loadBinItems(decodedText);
             }).catch(e => {
-                alert("Gagal buka kamera. Pastikan link HTTPS.");
+                alert("Kamera error. Pastikan link HTTPS.");
                 document.getElementById('scannerModal').style.display = 'none';
             });
         }
@@ -228,7 +242,6 @@
                 } else {
                     data.forEach(row => {
                         const tr = document.createElement('tr');
-                        // Ubah Tipe COUNT jadi ADJ agar jelas
                         let typeLabel = String(row.type).substring(0,3);
                         if (row.type === "COUNT") typeLabel = "ADJ";
                         
@@ -277,7 +290,6 @@
                     closeModal(); 
                     document.getElementById('modalQty').value = "";
                     document.getElementById('modalRefNo').value = "";
-                    // Refresh data bin dan riwayat seketika
                     await loadBinItems(currentBinCode); 
                     const updatedIdx = binItemsCache.findIndex(i => i.material === selectedItem.material && i.sloc === selectedItem.sloc);
                     if (updatedIdx > -1) {
