@@ -4,15 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Digital Stock Card | Distribution Center</title>
-    
-    <!-- Import Library -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-
     <style>
         :root {
-            /* Emerald Corporate Palette */
+            /* Palette Emerald Corporate - Tetap & Konsisten */
             --primary: #064e3b;       
-            --primary-light: #10b981; 
             --secondary: #1f2937;     
             --accent: #4f46e5;        
             --danger: #ef4444;        
@@ -25,117 +21,31 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-body);
-            color: var(--text-main);
-            line-height: 1.5;
-            padding-bottom: 60px;
-        }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-body); color: var(--text-main); padding-bottom: 60px; }
 
-        /* --- LAYOUT --- */
-        header {
-            background-color: var(--primary);
-            color: white;
-            padding: 16px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-        }
-        .header-content {
-            max-width: 600px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .bin-indicator {
-            background-color: rgba(255,255,255,0.15);
-            padding: 4px 12px;
-            border-radius: 4px;
-            font-weight: 500;
-            font-family: monospace;
-        }
+        header { background-color: var(--primary); color: white; padding: 16px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header-content { max-width: 600px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+        .bin-indicator { background-color: rgba(255,255,255,0.15); padding: 4px 12px; border-radius: 4px; font-weight: 500; font-family: monospace; }
 
         .container { max-width: 600px; margin: 0 auto; padding: 16px; }
-        
-        .card {
-            background: var(--bg-card);
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            margin-bottom: 16px;
-            overflow: hidden;
-            border: 1px solid var(--border);
-        }
+        .card { background: var(--bg-card); border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 16px; overflow: hidden; border: 1px solid var(--border); }
+        .card-header { padding: 16px; border-bottom: 1px solid var(--border); background-color: #f9fafb; display: flex; justify-content: space-between; align-items: center; }
 
-        /* --- ALARM GLOBAL (RESORED) --- */
         #globalAlarm {
-            background-color: var(--warning-bg);
-            border: 2px solid var(--danger);
-            color: var(--danger);
-            padding: 16px;
-            border-radius: 12px;
-            margin-top: 20px;
-            text-align: center;
-            font-weight: 800;
-            display: none; /* Akan muncul via JS jika ada selisih */
-            animation: pulse 1.5s infinite;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
+            background-color: var(--warning-bg); border: 2px solid var(--danger); color: var(--danger);
+            padding: 16px; border-radius: 12px; margin-top: 20px; text-align: center;
+            font-weight: 800; display: none; animation: pulse 1.5s infinite;
+            flex-direction: column; align-items: center; gap: 12px;
         }
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); transform: scale(1); }
-            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); transform: scale(1.02); }
-            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); transform: scale(1); }
-        }
-        .btn-alarm-detail {
-            background-color: var(--danger);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            font-weight: 800;
-        }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
-        /* --- RUNNING TEXT --- */
-        .running-text-container {
-            width: 100%;
-            overflow: hidden;
-            white-space: nowrap;
-            background-color: #e0f2fe;
-            color: #0369a1;
-            padding: 8px 0;
-            margin-top: 15px;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-        .running-text {
-            display: inline-block;
-            padding-left: 100%;
-            animation: marquee 15s linear infinite;
-        }
-        @keyframes marquee {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(-100%, 0); }
-        }
+        .marquee-container { width: 100%; overflow: hidden; white-space: nowrap; background-color: #e0f2fe; color: #0369a1; padding: 8px 0; margin-top: 15px; border-radius: 4px; font-size: 0.9rem; }
+        .marquee { display: inline-block; padding-left: 100%; animation: marquee 15s linear infinite; }
+        @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
 
-        /* --- COMPONENTS --- */
-        .btn-scan { 
-            width: 100%; padding: 30px; background-color: var(--secondary); margin-bottom: 15px;
-            color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 1.2rem;
-        }
+        .btn-scan { width: 100%; padding: 30px; background-color: var(--secondary); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 1.2rem; }
 
-        .material-item {
-            background: white; border: 1px solid var(--border); border-radius: 8px;
-            padding: 15px; display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 10px;
-        }
-        .mat-code { font-weight: 700; color: var(--primary); font-size: 1rem; }
+        .material-item { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .mat-sloc-badge { font-size: 0.7rem; background: #eef2ff; color: var(--accent); padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px; }
 
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; background-color: var(--border); gap: 1px; border-bottom: 1px solid var(--border); }
@@ -152,12 +62,10 @@
 
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; display: none; justify-content: center; align-items: center; }
         .modal { background: white; width: 90%; max-width: 400px; border-radius: 12px; padding: 25px; }
-        .modal-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid var(--border); border-radius: 6px; font-size: 1.1rem; }
+        .modal-input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border); border-radius: 4px; font-size: 1.1rem; }
 
         #reader { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 10px; background: black; }
         .hidden { display: none !important; }
-        .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; margin: 0 auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -170,159 +78,78 @@
     </header>
 
     <div class="container">
-        <!-- Loading State -->
         <div id="loadingState" class="card hidden">
-            <div style="padding: 30px; text-align: center;">
-                <div class="loading-spinner"></div>
-                <p style="margin-top: 10px; font-weight: bold;" id="loadingText">Sinkronisasi Data...</p>
-            </div>
+            <div style="padding: 30px; text-align: center;">Menyinkronkan...</div>
         </div>
 
         <!-- Home State -->
-        <div id="homeState" class="card hidden">
+        <div id="homeState" class="card">
             <div style="padding: 60px 20px; text-align: center;">
                 <h3 style="margin-bottom: 40px; color: var(--secondary); font-size: 1.2rem; font-weight: 800;">Inventory Control System<br>Distribution Center</h3>
-                
-                <button id="btnStartScan" class="btn-scan">
-                    SCAN QR RAK
-                </button>
-                
-                <p style="margin-top: 20px; color: var(--text-muted); font-size: 0.9rem;">Scan label QR di rak untuk memuat kartu stok.</p>
-
-                <div class="running-text-container">
-                    <div class="running-text">
-                        📢 DATA MIRROR AKTIF • Stok Unrestricted Terupdate • Pastikan Sloc Sesuai • Gunakan APD Lengkap • Safety First!
-                    </div>
-                </div>
-
-                <!-- ALARM MERAH (PENTING) -->
+                <button id="btnStartScan" class="btn-scan">SCAN QR RAK</button>
+                <div class="marquee-container"><div class="marquee">📢 DATA MIRROR AKTIF • Stok Unrestricted MB52 PL28 Terupdate Otomatis • Safety First!</div></div>
                 <div id="globalAlarm">
                     <div>🚨 PERHATIAN: Terdapat <span id="deviationCount">0</span> Item Selisih Stok!</div>
-                    <button id="btnShowDeviations" class="btn-alarm-detail">LIHAT DETAIL SELISIH</button>
+                    <button onclick="document.getElementById('deviationModal').style.display='flex'" style="background:var(--danger); color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:800; margin-top:10px;">LIHAT DETAIL SELISIH</button>
                 </div>
             </div>
         </div>
 
-        <!-- Select Material State -->
+        <!-- Material Select -->
         <div id="materialSelectState" class="card hidden">
             <div class="card-header">
                 <button onclick="showHomeState()" style="background:none; border:none; color:var(--primary); font-weight:bold; cursor:pointer;">← KEMBALI</button>
-                <span style="font-weight: 800; color: var(--secondary);">Pilih Material</span>
+                <span style="font-weight: 800;">Pilih Material</span>
             </div>
             <div id="materialListContainer" style="padding: 20px;"></div>
         </div>
 
-        <!-- Single Card State -->
+        <!-- Card View -->
         <div id="singleCardState" class="hidden">
             <div class="card">
                 <div class="card-header">
                     <button onclick="showMaterialSelectState()" style="background:none; border:none; color:var(--primary); font-weight:bold; cursor:pointer;">← LIST</button>
                     <span style="font-size: 0.7rem; font-weight:800; color: var(--accent);">VALIDASI SLOC AKTIF</span>
                 </div>
-                
                 <div style="padding: 20px; text-align: center;">
                     <div id="cardStatusBadge" style="margin-bottom:10px;"></div>
                     <span id="cardMaterial" style="font-size: 1.4rem; font-weight: 800; color: var(--primary);">MAT-0000</span>
-                    <div id="cardDesc" style="font-size: 1rem; color: var(--text-main); font-weight: 600; margin: 5px 0;">Description</div>
-                    <div style="font-size: 0.8rem; color: var(--text-muted); background: #f3f4f6; padding: 6px 12px; border-radius: 6px; display: inline-block; margin-top: 5px;">
+                    <div id="cardDesc" style="font-size: 1rem; font-weight: 600;">Description</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); background: #f3f4f6; padding: 6px 12px; border-radius: 6px; display: inline-block; margin-top: 10px;">
                         Bin: <span id="cardBin">-</span> | Sloc: <span id="cardSloc" style="font-weight:bold; color:var(--accent)">-</span>
                     </div>
                 </div>
-
                 <div class="stats-grid">
-                    <div class="stat-cell"><span class="stat-label">Sistem (SOH)</span><span class="stat-value" id="cardSoh">0</span></div>
+                    <div class="stat-cell"><span class="stat-label">System (SOH)</span><span class="stat-value" id="cardSoh">0</span></div>
                     <div class="stat-cell"><span class="stat-label">Physical</span><span class="stat-value" id="cardPhysical" style="color:var(--primary)">0</span></div>
                 </div>
-
-                <ul class="detail-list" style="list-style:none;">
-                    <li class="detail-item"><span style="color:var(--text-muted); font-weight:600;">Part Number</span><span class="detail-val" id="cardMpn">-</span></li>
-                    <li class="detail-item"><span style="color:var(--text-muted); font-weight:600;">Base Unit</span><span class="detail-val" id="cardUom">-</span></li>
-                </ul>
-
                 <div class="action-bar">
                     <button class="btn-action" style="background:var(--primary);" onclick="openTransactionModal('IN')">IN (+)</button>
                     <button class="btn-action" style="background:var(--secondary);" onclick="openTransactionModal('OUT')">OUT (-)</button>
                     <button class="btn-action" style="background:var(--accent);" onclick="openTransactionModal('COUNT')">CEK</button>
                 </div>
             </div>
-
             <div class="card">
-                <div class="card-header"><span style="font-weight:800; font-size:0.8rem; color:var(--secondary);">HISTORY TRANSAKSI</span></div>
-                <div style="overflow-x: auto;">
-                    <table class="stock-table">
-                        <thead><tr><th>Tgl</th><th>Tipe</th><th>Ref</th><th>Qty</th><th>Bal</th></tr></thead>
-                        <tbody id="historyTableBody"></tbody>
-                    </table>
-                </div>
+                <div class="card-header"><span style="font-weight:800; font-size:0.8rem;">HISTORY TERAKHIR</span></div>
+                <div style="overflow-x: auto;"><table class="stock-table"><thead><tr><th>Tgl</th><th>Tipe</th><th>Ref</th><th>Qty</th><th>Bal</th></tr></thead><tbody id="historyTableBody"></tbody></table></div>
             </div>
         </div>
     </div>
 
     <!-- Modals -->
-    <div id="scannerModal" class="modal-overlay">
-        <div class="modal" style="background:transparent; text-align:center; box-shadow:none;">
-            <div id="reader" style="width:100%; border:4px solid white; border-radius:12px;"></div>
-            <button onclick="stopScanner()" style="margin-top:20px; padding:15px; border-radius:12px; border:none; background:white; font-weight:bold; color:red;">TUTUP</button>
-        </div>
-    </div>
-
-    <div id="trxModal" class="modal-overlay">
-        <div class="modal">
-            <h3 id="modalTitle" style="margin-bottom:15px; font-weight:800; color:var(--primary);">Transaksi</h3>
-            <div style="background:#f3f4f6; padding:12px; border-radius:8px; margin-bottom:15px; border-left: 4px solid var(--primary);">
-                <p id="modalMaterialCode" style="font-weight:800; color:var(--primary); font-size:1rem;"></p>
-            </div>
-            <label class="stat-label">Petugas (PIC):</label>
-            <select id="modalPic" class="modal-input" style="background:white;">
-                <option value="" disabled selected>Pilih Nama...</option>
-                <option value="Budi Sutrisno">Budi Sutrisno</option>
-                <option value="Ardy">Ardy</option>
-                <option value="Muhammad Itsnal">Muhammad Itsnal</option>
-                <option value="Fathikin">Fathikin</option>
-                <option value="Slamet Riyadi">Slamet Riyadi</option>
-            </select>
-            <input type="text" id="modalRefNo" class="modal-input" placeholder="PO / Reservasi">
-            <input type="number" id="modalQty" class="modal-input" placeholder="0">
-            <div style="display:flex; gap:10px;">
-                <button onclick="closeModal()" style="flex:1; padding:15px; border-radius:10px; border:none; background:#f3f4f6; font-weight:800;">BATAL</button>
-                <button id="btnConfirmTrx" onclick="submitTransaction()" style="flex:1; padding:15px; border-radius:10px; border:none; background:var(--primary); color:white; font-weight:800;">SIMPAN</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="deviationModal" class="modal-overlay">
-        <div class="modal" style="width:95%; max-width:500px;">
-            <h3 style="color:var(--danger); margin-bottom:15px; font-weight:900;">🚨 DAFTAR SELISIH STOK</h3>
-            <div style="max-height: 350px; overflow-y: auto; border: 1px solid #fee2e2; border-radius: 8px;">
-                <table class="stock-table">
-                    <thead><tr><th>Bin</th><th>Material</th><th>Sloc</th><th>Selisih</th></tr></thead>
-                    <tbody id="deviationListBody"></tbody>
-                </table>
-            </div>
-            <button onclick="document.getElementById('deviationModal').style.display='none'" style="width:100%; margin-top:15px; padding:15px; border:none; border-radius:10px; background:#f3f4f6; font-weight:bold;">TUTUP</button>
-        </div>
-    </div>
+    <div id="scannerModal" class="modal-overlay"><div class="modal" style="background:transparent; text-align:center; box-shadow:none;"><div id="reader" style="width:100%; border:4px solid white; border-radius:12px;"></div><button onclick="stopScanner()" style="margin-top:20px; padding:15px; border-radius:12px; border:none; background:white; font-weight:bold; color:red;">TUTUP</button></div></div>
+    <div id="trxModal" class="modal-overlay"><div class="modal"><h3 style="margin-bottom:15px; font-weight:800;">Transaksi</h3><div id="modalMaterialCode" style="background:#f3f4f6; padding:10px; border-radius:4px; margin-bottom:15px; font-weight:800; color:var(--primary);"></div><select id="modalPic" class="modal-input"><option value="" disabled selected>Pilih PIC</option><option value="Budi Sutrisno">Budi Sutrisno</option><option value="Ardy">Ardy</option><option value="Muhammad Itsnal">Muhammad Itsnal</option><option value="Fathikin">Fathikin</option><option value="Slamet Riyadi">Slamet Riyadi</option></select><input type="text" id="modalRefNo" class="modal-input" placeholder="Ref (PO/DN)"><input type="number" id="modalQty" class="modal-input" placeholder="Qty"><div style="display:flex; gap:10px;"><button onclick="closeModal()" style="flex:1; padding:15px; border-radius:10px; border:none; background:#f3f4f6; font-weight:800;">BATAL</button><button id="btnConfirmTrx" onclick="submitTransaction()" style="flex:1; padding:15px; border-radius:10px; border:none; background:var(--primary); color:white; font-weight:800;">SIMPAN</button></div></div></div>
+    <div id="deviationModal" class="modal-overlay"><div class="modal" style="width:95%; max-width:500px;"><h3 style="color:var(--danger); margin-bottom:15px; font-weight:900;">🚨 DAFTAR SELISIH</h3><div style="max-height: 350px; overflow-y: auto;"><table class="stock-table"><thead><tr><th>Bin</th><th>Material</th><th>Sloc</th><th>Selisih</th></tr></thead><tbody id="deviationListBody"></tbody></table></div><button onclick="document.getElementById('deviationModal').style.display='none'" style="width:100%; margin-top:15px; padding:15px; border:none; border-radius:10px; background:#f3f4f6; font-weight:bold;">TUTUP</button></div></div>
 
     <script>
         const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbwzW5A58AyEb59xTX6jzJbknkhwXRr97F1wphvh-DghEyloCpa5kuqfcR_83TKCENc/exec"; 
-        
-        let binItemsCache = [];
-        let selectedItem = null;
-        let currentBinCode = null;
-        let currentTrxType = "OUT"; 
-        let html5Qrcode = null; 
+        let binItemsCache = []; let selectedItem = null; let currentBinCode = null; let currentTrxType = "OUT"; let html5Qrcode = null; 
 
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('btnStartScan').addEventListener('click', startScanner);
-            document.getElementById('btnShowDeviations').addEventListener('click', () => {
-                document.getElementById('deviationModal').style.display = 'flex';
-            });
-            checkGlobalStatus();
-            showHomeState();
-        });
+        document.getElementById('btnStartScan').addEventListener('click', startScanner);
+        checkGlobalStatus();
 
         async function checkGlobalStatus() {
-            if (API_ENDPOINT.includes("MASUKKAN_URL")) return;
+            if (!API_ENDPOINT || API_ENDPOINT.includes("MASUKKAN_URL")) return;
             try {
                 const res = await fetch(`${API_ENDPOINT}?action=get_global_status`);
                 const data = await res.json();
@@ -338,46 +165,29 @@
                         tbody.appendChild(tr);
                     });
                 } else { alarm.style.display = 'none'; }
-            } catch(e) { console.error("Alarm check failed"); }
+            } catch(e) {}
         }
 
         function startScanner() {
             document.getElementById('scannerModal').style.display = 'flex';
             if (!html5Qrcode) html5Qrcode = new Html5Qrcode("reader");
             html5Qrcode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (decodedText) => {
-                stopScanner();
-                proceedToBin(decodedText);
-            }).catch(e => alert("Kamera error. Pastikan izin kamera diberikan."));
+                stopScanner(); loadBinItems(decodedText);
+            }).catch(e => alert("Kamera error."));
         }
 
-        function stopScanner() {
-            if (html5Qrcode) {
-                html5Qrcode.stop().then(() => {
-                    document.getElementById('scannerModal').style.display = 'none';
-                }).catch(() => { document.getElementById('scannerModal').style.display = 'none'; });
-            } else { document.getElementById('scannerModal').style.display = 'none'; }
-        }
-
-        function proceedToBin(binCode) {
-            currentBinCode = binCode;
-            loadBinItems(binCode);
-        }
+        function stopScanner() { if (html5Qrcode) html5Qrcode.stop().then(() => { document.getElementById('scannerModal').style.display = 'none'; }); else document.getElementById('scannerModal').style.display = 'none'; }
 
         async function loadBinItems(binCode) {
-            showLoading(true, "Mencari BIN...");
+            document.getElementById('loadingState').classList.remove('hidden');
+            currentBinCode = binCode;
             document.getElementById('headerBinDisplay').textContent = `BIN : ${binCode.toUpperCase()}`;
             try {
                 const res = await fetch(`${API_ENDPOINT}?bin=${encodeURIComponent(binCode)}`);
                 const data = await res.json();
-                if (data.length === 0) {
-                    alert("BIN tidak ditemukan.");
-                    showHomeState();
-                } else {
-                    binItemsCache = data;
-                    renderMaterialList(data);
-                    showMaterialSelectState();
-                }
-            } catch (err) { alert("Error koneksi."); showHomeState(); } finally { showLoading(false); }
+                if (data.length === 0) { alert("BIN tidak ditemukan."); showHomeState(); }
+                else { binItemsCache = data; renderMaterialList(data); showMaterialSelectState(); }
+            } catch (err) { alert("Koneksi gagal."); showHomeState(); } finally { document.getElementById('loadingState').classList.add('hidden'); }
         }
 
         function renderMaterialList(items) {
@@ -386,8 +196,7 @@
             items.forEach((item, index) => {
                 const div = document.createElement('div');
                 div.className = 'material-item';
-                div.innerHTML = `<div class="mat-info"><span class="mat-code">${item.material} <span class="mat-sloc-badge">${item.sloc}</span></span><div class="mat-desc">${item.desc}</div></div>
-                                 <button style="background:var(--primary); color:white; border:none; padding:10px 18px; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="selectMaterialByIndex(${index})">PREVIEW</button>`;
+                div.innerHTML = `<div style="flex:1;"><span style="font-weight:bold; color:var(--primary);">${item.material} <span class="mat-sloc-badge">${item.sloc}</span></span><div style="font-size:0.85rem; color:var(--text-muted);">${item.desc}</div></div><button style="background:var(--primary); color:white; border:none; padding:10px 18px; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="selectMaterialByIndex(${index})">PREVIEW</button>`;
                 container.appendChild(div);
             });
         }
@@ -400,21 +209,20 @@
 
         async function loadHistory() {
             const tbody = document.getElementById('historyTableBody');
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Memuat...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">Memuat riwayat...</td></tr>';
             try {
                 const res = await fetch(`${API_ENDPOINT}?action=get_history&bin=${encodeURIComponent(currentBinCode)}&material=${encodeURIComponent(selectedItem.material)}`);
                 const data = await res.json();
                 tbody.innerHTML = '';
-                if (data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999;">Belum ada riwayat.</td></tr>';
-                } else {
+                if (data.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999;">Belum ada riwayat.</td></tr>'; }
+                else {
                     data.forEach(row => {
                         const tr = document.createElement('tr');
-                        tr.innerHTML = `<td>${row.date.split(' ')[0]}</td><td style="font-weight:bold;">${row.type.substring(0,3)}</td><td>${row.ref}</td><td style="font-weight:bold; text-align:center;">${row.qty}</td><td style="color:#666; text-align:center;">${row.balance}</td>`;
+                        tr.innerHTML = `<td>${String(row.date)}</td><td style="font-weight:bold;">${String(row.type).substring(0,3)}</td><td>${row.ref}</td><td style="font-weight:bold; text-align:center;">${row.qty}</td><td style="color:#666; text-align:center;">${row.balance}</td>`;
                         tbody.appendChild(tr);
                     });
                 }
-            } catch(e) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Gagal muat histori.</td></tr>'; }
+            } catch(e) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Gagal memproses riwayat.</td></tr>'; }
         }
 
         function renderSingleCard(item) {
@@ -426,13 +234,10 @@
             document.getElementById('cardSoh').textContent = item.soh;
             document.getElementById('cardPhysical').textContent = item.physical;
             document.getElementById('cardSloc').textContent = item.sloc;
-            document.getElementById('cardMpn').textContent = item.mpn || '-';
-            document.getElementById('cardUom').textContent = item.uom || '-';
-            
             const variance = (parseFloat(item.physical) || 0) - (parseFloat(item.soh) || 0);
             const badge = document.getElementById('cardStatusBadge');
-            if (variance === 0) badge.innerHTML = '<span style="background:#d1fae5; color:#065f46; padding:6px 15px; border-radius:20px; font-weight:bold; font-size:0.75rem;">SINKRON (MATCH OK)</span>';
-            else badge.innerHTML = `<span style="background:#fee2e2; color:#b91c1c; padding:6px 15px; border-radius:20px; font-weight:bold; font-size:0.75rem;">ADA SELISIH (${variance})</span>`;
+            if (variance === 0) badge.innerHTML = '<span style="background:#d1fae5; color:#065f46; padding:6px 15px; border-radius:20px; font-weight:bold; font-size:0.75rem;">SINKRON OK</span>';
+            else badge.innerHTML = `<span style="background:#fee2e2; color:#b91c1c; padding:6px 15px; border-radius:20px; font-weight:bold; font-size:0.75rem;">ADA SELISIH (${variance.toFixed(2)})</span>`;
         }
 
         function openTransactionModal(type) {
@@ -447,34 +252,29 @@
             const qty = document.getElementById('modalQty').value;
             const ref = document.getElementById('modalRefNo').value;
             const pic = document.getElementById('modalPic').value;
-            if (!qty || !pic) return alert("PENTING: Jumlah (Qty) dan PIC wajib diisi!");
-            
+            if (!qty || !pic) return alert("PIC & Qty wajib!");
             const btn = document.getElementById('btnConfirmTrx');
-            const originalText = btn.textContent;
             btn.disabled = true; btn.textContent = "MEMPROSES...";
             try {
-                // KIRIM DATA TERMASUK SLOC UNTUK VALIDASI
                 const url = `${API_ENDPOINT}?action=update_stock&bin=${encodeURIComponent(currentBinCode)}&material=${encodeURIComponent(selectedItem.material)}&sloc=${encodeURIComponent(selectedItem.sloc)}&qty=${qty}&ref_no=${encodeURIComponent(ref)}&trx_type=${currentTrxType}&pic=${encodeURIComponent(pic)}`;
                 const response = await fetch(url);
                 const result = await response.json();
                 if (result.status === 'success') {
-                    closeModal();
-                    document.getElementById('modalQty').value = "";
-                    document.getElementById('modalRefNo').value = "";
-                    await loadBinItems(currentBinCode);
-                    const updatedIdx = binItemsCache.findIndex(i => i.material === selectedItem.material && i.sloc === selectedItem.sloc);
-                    if (updatedIdx > -1) selectMaterialByIndex(updatedIdx);
-                    checkGlobalStatus();
+                    closeModal(); loadBinItems(currentBinCode); checkGlobalStatus();
                 } else { alert("Gagal: " + result.message); }
-            } catch (err) { alert("Error koneksi saat simpan data."); }
-            finally { btn.disabled = false; btn.textContent = originalText; }
+            } catch (err) { alert("Error koneksi."); }
+            finally { btn.disabled = false; btn.textContent = "SIMPAN"; }
         }
 
-        function showLoading(s, t) { document.getElementById('loadingState').classList.toggle('hidden', !s); document.getElementById('loadingText').textContent = t; }
-        function showHomeState() { hideAll(); document.getElementById('homeState').classList.remove('hidden'); updateHeader(''); }
-        function showMaterialSelectState() { hideAll(); document.getElementById('materialSelectState').classList.remove('hidden'); }
-        function hideAll() { ['homeState', 'materialSelectState', 'singleCardState', 'loadingState'].forEach(id => document.getElementById(id).classList.add('hidden')); }
-        function updateHeader(b) { document.getElementById('headerBinDisplay').textContent = b ? `BIN : ${b.toUpperCase()}` : 'READY'; }
+        function showHomeState() { 
+            ['materialSelectState','singleCardState'].forEach(id => document.getElementById(id).classList.add('hidden')); 
+            document.getElementById('homeState').classList.remove('hidden'); 
+            checkGlobalStatus(); 
+        }
+        function showMaterialSelectState() { 
+            ['homeState','singleCardState'].forEach(id => document.getElementById(id).classList.add('hidden')); 
+            document.getElementById('materialSelectState').classList.remove('hidden'); 
+        }
     </script>
 </body>
 </html>
